@@ -42,55 +42,43 @@ struct OrderView: View {
     ]
 
     var body: some View {
-        GeometryReader { geometry in
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Order and Points section (Top)
-                    HStack {
-                        Text("Order")
-                            .font(.system(size: 35, weight: .bold))
-                            .padding(.leading)
-                            .padding(.top, 40) // Adjust padding to position under the notch
+           GeometryReader { geometry in
+               ScrollView {
+                   VStack(spacing: 20) {
+                       // Image inside the black box
+                       Image("multiplecookie") // Replace with the actual image name
+                           .resizable()
+                           .scaledToFill()
+                           .frame(height: geometry.size.height * 0.6)
+                           .clipped()
 
-                        Spacer()
+                       // "Customize Your Perfect Cookie" section below the image
+                       VStack(spacing: 20) {
+                           Text("CUSTOMIZE YOUR PERFECT COOKIE!")
+                               .font(.system(size: 35, weight: .bold))
+                               .multilineTextAlignment(.center)
+                               .frame(maxWidth: .infinity, alignment: .leading)
+                               .padding(.horizontal, 20)
+                               .padding(.vertical, 10)
 
-                        // Placeholder for points on the top right
-                        Text("1839 pts")
-                            .font(.system(size: 20, weight: .bold))
-                            .padding(.trailing)
-                            .padding(.top, 40) // Adjust padding to position under the notch
-                    }
-
-                    // Remove the image portion here (commented out)
-                    // Image("multiplecookie") // Replace with the actual image name
-                    
-                    // "Customize Your Perfect Cookie" section moved up
-                    VStack(spacing: 20) {
-                        Text("CUSTOMIZE YOUR PERFECT COOKIE!")
-                            .font(.system(size: 35, weight: .bold))
-                            .multilineTextAlignment(.center)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 10)
-
-                        // Start Baking Button
-                        Button(action: {
-                            showCustomizationForm.toggle()
-                        }) {
-                            Text("Start Baking")
-                                .font(.system(size: 20, weight: .bold))
-                                .frame(width: geometry.size.width * 0.8, alignment: .center)
-                                .padding()
-                                .background(Color.black)
-                                .foregroundColor(.white)
-                                .cornerRadius(10)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 20)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 20)
+                           // Start Baking Button
+                           Button(action: {
+                               showCustomizationForm.toggle()
+                           }) {
+                               Text("Start Baking")
+                                   .font(.system(size: 20, weight: .bold))
+                                   .frame(width: geometry.size.width * 0.8, alignment: .center)
+                                   .padding()
+                                   .background(Color.black)
+                                   .foregroundColor(.white)
+                                   .cornerRadius(10)
+                           }
+                           .frame(maxWidth: .infinity, alignment: .leading)
+                       }
+                       .frame(maxWidth: .infinity)
+                       .padding(.top, 20)
+                       .padding(.horizontal, 20)
+                       .padding(.vertical, 20)
 
                     // Show Customization Form if toggled
                     if showCustomizationForm {
@@ -109,6 +97,7 @@ struct OrderView: View {
                                     .foregroundColor(.black)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding()
+                                
 
                                 ForEach(batters, id: \.self) { batter in
                                     Toggle(isOn: Binding(
@@ -123,7 +112,7 @@ struct OrderView: View {
                                     )) {
                                         Text(batter)
                                     }
-                                    .toggleStyle(CheckboxToggleStyle()) // Custom CheckboxToggleStyle
+                                    .toggleStyle(CheckboxToggleStyle()) // Use Checkbox for batter selection
                                     .padding(.horizontal)
                                 }
                             }
@@ -153,14 +142,14 @@ struct OrderView: View {
                                     )) {
                                         Text(mixIn)
                                     }
-                                    .toggleStyle(CheckboxToggleStyle()) // Custom CheckboxToggleStyle
+                                    .toggleStyle(CheckboxToggleStyle()) // Use Checkbox for mix-ins
                                     .disabled(!selectedMixIns.contains(mixIn) && selectedMixIns.count >= 3)
                                     .padding(.horizontal)
                                 }
                             }
                         }
                     }
-
+                    
                     Spacer()
                 }
                 .padding(.bottom, 100) // Avoid overlap with bottom content
@@ -171,6 +160,3 @@ struct OrderView: View {
         }
     }
 }
-
-
-

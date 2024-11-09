@@ -6,55 +6,82 @@
 //
 
 import SwiftUI
-import AVKit
-import UIKit
-import AVFoundation
-
 
 struct MoreView: View {
-    @State private var player: AVPlayer?
-
+    @EnvironmentObject var authViewModel: AuthViewModel // Access AuthViewModel from the environment
     var body: some View {
-        GeometryReader { geometry in
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Add your content here for More tab (Images, Texts, etc.)
-                    Text("More Tab Content")
-                        .font(.largeTitle)
-                        .padding()
+        ScrollView {
+            VStack(spacing: 20) {
+                Text("More Options")
+                    .font(.largeTitle)
+                    .padding()
 
-                    // Video Player Section
-                    if let player = player {
-                        VideoPlayer(player: player)
-                            .frame(height: geometry.size.height * 0.4) // Adjust height as needed
-                            .onAppear {
-                                player.play() // Start playing the video when it appears
+                // Profile Management
+                NavigationLink(destination: ProfileView()) {
+                    MoreOptionView(title: "Profile Management", iconName: "person.crop.circle")
+                }
+
+                // Order History
+                NavigationLink(destination: OrderHistoryView()) {
+                    MoreOptionView(title: "Order History", iconName: "clock")
+                }
+
+                // Contact Us
+                NavigationLink(destination: ContactUsView()) {
+                    MoreOptionView(title: "Contact Us", iconName: "phone")
+                }
+
+                // About Us
+                NavigationLink(destination: AboutUsView()) {
+                    MoreOptionView(title: "About Us", iconName: "info.circle")
+                }
+
+                // Feedback and Reviews
+                NavigationLink(destination: FeedbackView()) {
+                    MoreOptionView(title: "Feedback & Reviews", iconName: "star")
+                }
+
+                // App Settings
+                NavigationLink(destination: AppSettingsView()) {
+                    MoreOptionView(title: "App Settings", iconName: "gear")
+                }
+
+                // Special Offers
+                NavigationLink(destination: SpecialOffersView()) {
+                    MoreOptionView(title: "Special Offers", iconName: "tag")
+                }
+
+                // Loyalty Program
+                NavigationLink(destination: LoyaltyProgramView()) {
+                    MoreOptionView(title: "Loyalty Program", iconName: "star.fill")
+                }
+
+                // Events and News
+                NavigationLink(destination: EventsNewsView()) {
+                    MoreOptionView(title: "Events & News", iconName: "calendar")
+                }
+
+                // Privacy Policy
+                NavigationLink(destination: PrivacyPolicyView()) {
+                    MoreOptionView(title: "Privacy Policy", iconName: "shield")
+                }
+
+                // Terms of Service
+                NavigationLink(destination: TermsOfServiceView()) {
+                    MoreOptionView(title: "Terms of Service", iconName: "doc.text")
+                }
+
+                // Logout Option
+                Button(action: {
+                                authViewModel.signOut() // Calls the signOut function from AuthViewModel
+                            }) {
+                                MoreOptionView(title: "Logout", iconName: "arrow.right.circle")
+                                    .foregroundColor(.red)
                             }
-                    } else {
-                        Text("Video not available")
-                    }
-                }
-                .padding()
-                .padding(.bottom, 100) // Avoid overlap with TabView
-                .background(Color(red: 1.0, green: 1.0, blue: 0.8)) // Background color for scrolling content
-                .onAppear {
-                    setupVideoPlayer()
-                }
-            }
+                        }
+            .padding()
+            .background(Color(red: 1.0, green: 1.0, blue: 0.8))
             .ignoresSafeArea()
-            .safeAreaInset(edge: .bottom) {
-                Color.clear.frame(height: 50) // Space for TabView
-            }
-        }
-    }
-
-    private func setupVideoPlayer() {
-        if let videoPath = Bundle.main.path(forResource: "EOSC-reel", ofType: "mp4") {
-            let videoURL = URL(fileURLWithPath: videoPath)
-            player = AVPlayer(url: videoURL)
-        } else {
-            print("Video file not found.")
         }
     }
 }
-

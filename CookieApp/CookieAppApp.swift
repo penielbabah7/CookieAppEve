@@ -10,7 +10,6 @@ import AVKit
 import UIKit
 import AVFoundation
 
-@main
 struct YourApp: App {
     init() {
         // Customize Tab Bar appearance
