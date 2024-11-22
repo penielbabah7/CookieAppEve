@@ -10,16 +10,10 @@ import SwiftUI
 struct ProfileView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
     @State private var isEditing = false
-    @State private var newName: String
-    @State private var newEmail: String
-    @State private var newPhone: String
+    @State private var newName = ""
+    @State private var newEmail = ""
+    @State private var newPhone = ""
     @State private var showDeleteAlert = false
-
-    init() {
-        _newName = State(initialValue: "")
-        _newEmail = State(initialValue: "")
-        _newPhone = State(initialValue: "")
-    }
 
     var body: some View {
         ScrollView {
@@ -45,7 +39,7 @@ struct ProfileView: View {
                     }
 
                     Button(action: {
-                        // Trigger image picker
+                        // Trigger image picker or update profile picture flow
                     }) {
                         Text("Change Profile Picture")
                             .font(.footnote)
@@ -120,20 +114,22 @@ struct ProfileView: View {
 
                 // Edit/Save Button
                 Button(action: {
-                    authViewModel.updateProfile(
-                        name: newName.isEmpty ? nil : newName,
-                        email: newEmail.isEmpty ? nil : newEmail,
-                        phone: newPhone.isEmpty ? nil : newPhone
-                    )
+                    if isEditing {
+                        authViewModel.updateProfile(
+                            name: newName.isEmpty ? nil : newName,
+                            email: newEmail.isEmpty ? nil : newEmail,
+                            phone: newPhone.isEmpty ? nil : newPhone
+                        )
+                    }
+                    isEditing.toggle()
                 }) {
-                    Text("Save Changes")
+                    Text(isEditing ? "Save Changes" : "Edit Profile")
                         .foregroundColor(.white)
                         .padding()
                         .frame(maxWidth: .infinity)
-                        .background(Color.green)
+                        .background(isEditing ? Color.green : Color.blue)
                         .cornerRadius(10)
                 }
-
             }
             .padding()
         }

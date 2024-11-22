@@ -13,6 +13,8 @@ struct SignUpView: View {
     @State private var firstName = ""
     @State private var lastName = ""
     @State private var birthdate = Date()
+    @State private var phone = ""
+    @State private var address = ""
     @EnvironmentObject var authViewModel: AuthViewModel
 
     var body: some View {
@@ -32,7 +34,17 @@ struct SignUpView: View {
             DatePicker("Birthdate", selection: $birthdate, displayedComponents: .date)
                 .padding()
 
+            TextField("Phone Number", text: $phone)
+                .keyboardType(.phonePad)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .padding()
+
+            TextField("Address", text: $address)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .padding()
+
             TextField("Email", text: $email)
+                .keyboardType(.emailAddress)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
 
@@ -41,7 +53,16 @@ struct SignUpView: View {
                 .padding()
 
             Button(action: {
-                authViewModel.signUp(email: email, password: password, firstName: firstName, lastName: lastName, birthdate: birthdate)
+                // Trigger the `signUp` function with all required fields
+                authViewModel.signUp(
+                    email: email,
+                    password: password,
+                    firstName: firstName,
+                    lastName: lastName,
+                    birthdate: birthdate,
+                    address: address,
+                    phone: phone
+                )
             }) {
                 Text("Sign Up")
                     .foregroundColor(.white)

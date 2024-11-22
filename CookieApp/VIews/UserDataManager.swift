@@ -16,7 +16,7 @@ class UserDataManager {
         db.collection("users").document(userId).getDocument { document, error in
             if let document = document, document.exists {
                 do {
-                    let userData = try document.data(as: UserData.self) // Using Codable decoding
+                    let userData = try document.data(as: UserData.self) // Decoding using Codable
                     completion(userData)
                 } catch {
                     print("Error decoding user data: \(error)")
@@ -30,7 +30,7 @@ class UserDataManager {
 
     func saveUserData(userId: String, userData: UserData) {
         do {
-            try db.collection("users").document(userId).setData(from: userData) // Using Codable encoding
+            try db.collection("users").document(userId).setData(from: userData) // Encoding using Codable
         } catch {
             print("Error saving user data: \(error)")
         }

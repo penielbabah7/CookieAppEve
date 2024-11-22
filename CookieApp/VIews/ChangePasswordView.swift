@@ -30,8 +30,6 @@ struct ChangePasswordView: View {
             Button(action: {
                 if newPassword == confirmPassword {
                     authViewModel.changePassword(currentPassword: currentPassword, newPassword: newPassword)
-                } else {
-                    // Show mismatch error
                 }
             }) {
                 Text("Change Password")
