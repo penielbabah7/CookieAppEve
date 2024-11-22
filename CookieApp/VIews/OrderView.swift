@@ -23,11 +23,12 @@ struct CheckboxToggleStyle: ToggleStyle {
     }
 }
 
-
 struct OrderView: View {
     @State private var selectedBatter = ""
     @State private var selectedMixIns: [String] = []
     @State private var showCustomizationForm = false
+    @State private var orderCount = 0 // Track the order count for favorite feature
+    @State private var isFavorite = false // Track if the cookie is marked as favorite
 
     let batters = ["Chocolate Chip", "Peanut Butter", "Sugar Cookie"]
     let mixIns = [
@@ -42,43 +43,43 @@ struct OrderView: View {
     ]
 
     var body: some View {
-           GeometryReader { geometry in
-               ScrollView {
-                   VStack(spacing: 20) {
-                       // Image inside the black box
-                       Image("multiplecookie") // Replace with the actual image name
-                           .resizable()
-                           .scaledToFill()
-                           .frame(height: geometry.size.height * 0.6)
-                           .clipped()
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Image inside the black box
+                    Image("multiplecookie") // Replace with the actual image name
+                        .resizable()
+                        .scaledToFill()
+                        .frame(height: geometry.size.height * 0.6)
+                        .clipped()
 
-                       // "Customize Your Perfect Cookie" section below the image
-                       VStack(spacing: 20) {
-                           Text("CUSTOMIZE YOUR PERFECT COOKIE!")
-                               .font(.system(size: 35, weight: .bold))
-                               .multilineTextAlignment(.center)
-                               .frame(maxWidth: .infinity, alignment: .leading)
-                               .padding(.horizontal, 20)
-                               .padding(.vertical, 10)
+                    // "Customize Your Perfect Cookie" section below the image
+                    VStack(spacing: 20) {
+                        Text("CUSTOMIZE YOUR PERFECT COOKIE!")
+                            .font(.system(size: 35, weight: .bold))
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
 
-                           // Start Baking Button
-                           Button(action: {
-                               showCustomizationForm.toggle()
-                           }) {
-                               Text("Start Baking")
-                                   .font(.system(size: 20, weight: .bold))
-                                   .frame(width: geometry.size.width * 0.8, alignment: .center)
-                                   .padding()
-                                   .background(Color.black)
-                                   .foregroundColor(.white)
-                                   .cornerRadius(10)
-                           }
-                           .frame(maxWidth: .infinity, alignment: .leading)
-                       }
-                       .frame(maxWidth: .infinity)
-                       .padding(.top, 20)
-                       .padding(.horizontal, 20)
-                       .padding(.vertical, 20)
+                        // Start Baking Button
+                        Button(action: {
+                            showCustomizationForm.toggle()
+                        }) {
+                            Text("Start Baking")
+                                .font(.system(size: 20, weight: .bold))
+                                .frame(width: geometry.size.width * 0.8, alignment: .center)
+                                .padding()
+                                .background(Color.black)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 20)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 20)
 
                     // Show Customization Form if toggled
                     if showCustomizationForm {
@@ -97,7 +98,6 @@ struct OrderView: View {
                                     .foregroundColor(.black)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding()
-                                
 
                                 ForEach(batters, id: \.self) { batter in
                                     Toggle(isOn: Binding(
@@ -147,6 +147,27 @@ struct OrderView: View {
                                     .padding(.horizontal)
                                 }
                             }
+
+                            // Order Button
+                            Button(action: placeOrder) {
+                                Text("Order Now")
+                                    .font(.headline)
+                                    .padding()
+                                    .frame(maxWidth: .infinity)
+                                    .background(selectedBatter.isEmpty ? Color.gray : Color.blue)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(10)
+                            }
+                            .disabled(selectedBatter.isEmpty) // Disable button if no batter is selected
+                            .padding(.top)
+                            
+                            // Favorite Indicator
+                            if isFavorite {
+                                Text("This is your favorite cookie!")
+                                    .foregroundColor(.red)
+                                    .font(.subheadline)
+                                    .padding(.top, 10)
+                            }
                         }
                     }
                     
@@ -158,5 +179,19 @@ struct OrderView: View {
             .background(Color(red: 1.0, green: 1.0, blue: 0.8))
             .ignoresSafeArea()
         }
+    }
+    
+    // MARK: - Functions
+    
+    private func placeOrder() {
+        // Increment order count and check for favorite status
+        orderCount += 1
+        if orderCount > 6 {
+            isFavorite = true
+        }
+        
+        // Reset selections after placing order
+        selectedBatter = ""
+        selectedMixIns.removeAll()
     }
 }

@@ -61,8 +61,9 @@ struct MenuView: View {
     }
 }
 
-#Preview {
-    MenuView()
+struct MenuView_Previews: PreviewProvider {
+    static var previews: some View {
+        MenuView()
+            .environmentObject(AuthViewModel()) // Inject a test instance of AuthViewModel
+    }
 }
-
-
