@@ -12,11 +12,8 @@ import FirebaseFirestore
 
 struct UserData: Codable {
     @DocumentID var id: String? // Automatically maps Firestore document ID
-    var firstName: String
-    var lastName: String
-    var email: String
-    var phone: String
-    var birthdate: Date?
-    var address: String?
-    var loyaltyPoints: Int = 0
+    var purchaseCount: Int = 0 // Tracks the number of purchases
+    var rewards: [String: Bool] = [:] // Tracks rewards (e.g., ["freeCookie": true])
+    var birthdate: Date? // Optional birthdate field
+    var address: String? // Add address if required
 }

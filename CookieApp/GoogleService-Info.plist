@@ -2,6 +2,18 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>We need your location to provide address suggestions and autofill options.</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>We need your location to provide address suggestions and autofill options.</string>
+
+    <key>FirebaseAuthUI</key>
+    <dict>
+        <key>CustomScheme</key>
+        <string>YOUR_BUNDLE_ID</string>
+    </dict>
+
+
 	<key>API_KEY</key>
 	<string>AIzaSyDjp1_Di4uzVHcy6X0PyUx6o-ryTr2q1PU</string>
 	<key>GCM_SENDER_ID</key>

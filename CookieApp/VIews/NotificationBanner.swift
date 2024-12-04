@@ -33,9 +33,10 @@ struct NotificationBanner: View {
                 .cornerRadius(10)
                 .padding()
                 .transition(.move(edge: .top))
-                .animation(.easeInOut)
             }
             Spacer()
         }
+        .animation(.easeInOut, value: isVisible) // Apply animation based on `isVisible`
     }
 }
+

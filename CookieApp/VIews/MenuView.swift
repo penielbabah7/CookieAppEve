@@ -17,7 +17,7 @@ struct MenuView: View {
             // Home Tab
             NavigationView {
                 HomeView(selectedTab: $selectedTab)
-                    .background(Color(red: 1.0, green: 1.0, blue: 0.8))
+                    .applyBackground()
             }
             .tabItem {
                 Image(systemName: "house")
@@ -28,7 +28,7 @@ struct MenuView: View {
             // Order Tab
             NavigationView {
                 OrderView()
-                    .background(Color(red: 1.0, green: 1.0, blue: 0.8))
+                    .applyBackground()
             }
             .tabItem {
                 Image(systemName: "list.bullet")
@@ -39,7 +39,7 @@ struct MenuView: View {
             // Rewards Tab
             NavigationView {
                 RewardsView()
-                    .background(Color(red: 1.0, green: 1.0, blue: 0.8))
+                    .applyBackground()
             }
             .tabItem {
                 Image(systemName: "gift")
@@ -50,7 +50,7 @@ struct MenuView: View {
             // More Tab
             NavigationView {
                 MoreView()
-                    .background(Color(red: 1.0, green: 1.0, blue: 0.8))
+                    .applyBackground()
             }
             .tabItem {
                 Image(systemName: "ellipsis")
@@ -64,6 +64,15 @@ struct MenuView: View {
 struct MenuView_Previews: PreviewProvider {
     static var previews: some View {
         MenuView()
-            .environmentObject(AuthViewModel()) // Inject a test instance of AuthViewModel
+            .environmentObject(AuthViewModel())
+            .environmentObject(SignUpViewModel())
     }
 }
+
+// Background Modifier
+extension View {
+    func applyBackground() -> some View {
+        self.background(Color(red: 1.0, green: 1.0, blue: 0.8).ignoresSafeArea())
+    }
+}
+

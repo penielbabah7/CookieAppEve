@@ -4,7 +4,6 @@
 //
 //  Created by Peniel Babah on 11/8/24.
 //
-
 import SwiftUI
 
 struct ProfileView: View {
@@ -13,6 +12,7 @@ struct ProfileView: View {
     @State private var newName = ""
     @State private var newEmail = ""
     @State private var newPhone = ""
+    @State private var newAddress = ""
     @State private var showDeleteAlert = false
 
     var body: some View {
@@ -39,7 +39,8 @@ struct ProfileView: View {
                     }
 
                     Button(action: {
-                        // Trigger image picker or update profile picture flow
+                        // Implement functionality to change profile picture
+                        // You could integrate Firebase Storage for handling image uploads
                     }) {
                         Text("Change Profile Picture")
                             .font(.footnote)
@@ -49,7 +50,7 @@ struct ProfileView: View {
 
                 Divider()
 
-                // Profile Information
+                // Profile Information Section
                 VStack(spacing: 10) {
                     if isEditing {
                         TextField("Enter your name", text: $newName)
@@ -63,16 +64,25 @@ struct ProfileView: View {
                         TextField("Enter your phone (optional)", text: $newPhone)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .padding(.horizontal)
+
+                        TextField("Enter your address (optional)", text: $newAddress)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .padding(.horizontal)
                     } else {
-                        Text(authViewModel.userName)
+                        Text(authViewModel.userName.isEmpty ? "No Name" : authViewModel.userName)
                             .font(.title)
                             .fontWeight(.bold)
 
-                        Text(authViewModel.userEmail)
+                        Text(authViewModel.userEmail.isEmpty ? "No Email" : authViewModel.userEmail)
                             .foregroundColor(.gray)
 
                         if !authViewModel.userPhone.isEmpty {
                             Text(authViewModel.userPhone)
+                                .foregroundColor(.gray)
+                        }
+
+                        if !authViewModel.address.isEmpty {
+                            Text(authViewModel.address)
                                 .foregroundColor(.gray)
                         }
                     }
@@ -118,10 +128,24 @@ struct ProfileView: View {
                         authViewModel.updateProfile(
                             name: newName.isEmpty ? nil : newName,
                             email: newEmail.isEmpty ? nil : newEmail,
-                            phone: newPhone.isEmpty ? nil : newPhone
-                        )
+                            phone: newPhone.isEmpty ? nil : newPhone,
+                            address: newAddress.isEmpty ? nil : newAddress
+                        ) { success, errorMessage in
+                            if success {
+                                // Optionally handle success
+                                isEditing = false
+                            } else {
+                                authViewModel.errorMessage = errorMessage
+                            }
+                        }
+                    } else {
+                        // Populate fields with current data
+                        newName = authViewModel.userName
+                        newEmail = authViewModel.userEmail
+                        newPhone = authViewModel.userPhone
+                        newAddress = authViewModel.address
+                        isEditing = true
                     }
-                    isEditing.toggle()
                 }) {
                     Text(isEditing ? "Save Changes" : "Edit Profile")
                         .foregroundColor(.white)

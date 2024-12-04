@@ -6,30 +6,42 @@
 //
 
 import SwiftUI
+import FirebaseCore
 import AVKit
 import UIKit
 import AVFoundation
 
+@main
 struct YourApp: App {
-    init() {
-        // Customize Tab Bar appearance
-        let appearance = UITabBarAppearance()
-        
-        // Set background color
-        appearance.backgroundColor = UIColor(red: 1.0, green: 1.0, blue: 0.8, alpha: 1.0) // Your pastel yellow or tan color
-        
-        // Remove separator line by setting shadow color and shadow image to nil
-        appearance.shadowColor = .clear
-        appearance.shadowImage = nil
+    @StateObject private var authViewModel = AuthViewModel()
+    @StateObject private var signUpViewModel = SignUpViewModel()
 
-        // Apply appearance settings
-        UITabBar.appearance().standardAppearance = appearance
-        UITabBar.appearance().scrollEdgeAppearance = appearance
+    init() {
+        FirebaseApp.configure()
     }
-    
+
     var body: some Scene {
         WindowGroup {
-            MenuView()
+            if authViewModel.isLoading {
+                SplashScreenView()
+                    .environmentObject(authViewModel)
+                    .environmentObject(signUpViewModel)
+            } else if authViewModel.isSignedIn {
+                MenuView()
+                    .environmentObject(authViewModel)
+            } else {
+                NavigationView {
+                    if signUpViewModel.currentStep > 1 {
+                        SignUpFlowView()
+                            .environmentObject(authViewModel)
+                            .environmentObject(signUpViewModel)
+                    } else {
+                        SignInView()
+                            .environmentObject(authViewModel)
+                            .environmentObject(signUpViewModel)
+                    }
+                }
+            }
         }
     }
 }

@@ -61,16 +61,3 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         return true
     }
 }
-
-@main
-struct EvesCookies: App {
-    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
-    @StateObject private var authViewModel = AuthViewModel() // Initialize once at the root
-
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-                .environmentObject(authViewModel) // Provide AuthViewModel to the app
-        }
-    }
-}
