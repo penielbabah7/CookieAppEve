@@ -5,6 +5,8 @@
 //  Created by Daniel Baroi on 10/5/24.
 //
 
+// Hello my name is Daniel B
+
 import SwiftUI
 import AVKit
 import UIKit
@@ -16,6 +18,8 @@ struct HomeView: View {
     @State private var player = AVPlayer()
     @State private var showNutritionalInfo = false
     @State private var selectedCookie: String?
+
+    
 
     var body: some View {
         GeometryReader { geometry in
