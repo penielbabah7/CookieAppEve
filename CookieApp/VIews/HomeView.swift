@@ -31,7 +31,7 @@ struct HomeView: View {
                         .padding(.horizontal, -20)
                         .padding(.vertical, -30)
                         .onAppear {
-                            if let videoURL = Bundle.main.url(forResource: "EOSC-reel", withExtension: "mp4") {
+                            if let videoURL = Bundle.main.url(forResource: "EOSC Reel", withExtension: "mp4") {
                                 player = AVPlayer(url: videoURL)
                                 player.play()
                               
@@ -127,6 +127,7 @@ struct NutritionalInfoView: View {
         }
     }
 }
+
 
 
 

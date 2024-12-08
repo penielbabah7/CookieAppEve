@@ -15,10 +15,12 @@
 		B4A553D22CDF07AF00F97081 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = B4A553D12CDF07AF00F97081 /* FirebaseMessaging */; };
 		B4A553D42CDF07AF00F97081 /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = B4A553D32CDF07AF00F97081 /* FirebaseRemoteConfig */; };
 		B4A553D62CDF07AF00F97081 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = B4A553D52CDF07AF00F97081 /* FirebaseStorage */; };
+		D5F4592A2D0622F300ACF0EB /* EOSC Reel.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D5F459292D0622F300ACF0EB /* EOSC Reel.mp4 */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		D51F9EE82CDE9FF2009DFD35 /* CookieApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CookieApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D5F459292D0622F300ACF0EB /* EOSC Reel.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "EOSC Reel.mp4"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -51,6 +53,7 @@
 		D51F9EDF2CDE9FF2009DFD35 = {
 			isa = PBXGroup;
 			children = (
+				D5F459292D0622F300ACF0EB /* EOSC Reel.mp4 */,
 				D51F9EEA2CDE9FF2009DFD35 /* CookieApp */,
 				D51F9EE92CDE9FF2009DFD35 /* Products */,
 			);
@@ -139,6 +142,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D5F4592A2D0622F300ACF0EB /* EOSC Reel.mp4 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
