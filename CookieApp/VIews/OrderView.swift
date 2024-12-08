@@ -149,25 +149,25 @@ struct OrderView: View {
                             }
 
                             // Order Button
-                            Button(action: placeOrder) {
-                                Text("Order Now")
-                                    .font(.headline)
-                                    .padding()
-                                    .frame(maxWidth: .infinity)
-                                    .background(selectedBatter.isEmpty ? Color.gray : Color.blue)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(10)
-                            }
-                            .disabled(selectedBatter.isEmpty) // Disable button if no batter is selected
-                            .padding(.top)
-                            
-                            // Favorite Indicator
-                            if isFavorite {
-                                Text("This is your favorite cookie!")
-                                    .foregroundColor(.red)
-                                    .font(.subheadline)
-                                    .padding(.top, 10)
-                            }
+//                            Button(action: placeOrder) {
+//                                Text("Order Now")
+//                                    .font(.headline)
+//                                    .padding()
+//                                    .frame(maxWidth: .infinity)
+//                                    .background(selectedBatter.isEmpty ? Color.gray : Color.blue)
+//                                    .foregroundColor(.white)
+//                                    .cornerRadius(10)
+//                            }
+//                            .disabled(selectedBatter.isEmpty) // Disable button if no batter is selected
+//                            .padding(.top)
+//                            
+//                            // Favorite Indicator
+//                            if isFavorite {
+//                                Text("This is your favorite cookie!")
+//                                    .foregroundColor(.red)
+//                                    .font(.subheadline)
+//                                    .padding(.top, 10)
+//                            }
                         }
                     }
                     
