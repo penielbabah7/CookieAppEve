@@ -20,6 +20,8 @@ class SignUpViewModel: ObservableObject {
     @Published var zipCode: String = ""
     @Published var errorMessage: String?
     @Published var showError: Bool = false
+    @Published var phone: String = ""
+
 
     // Validation state for Next button
     var canProceedToNextStep: Bool {
