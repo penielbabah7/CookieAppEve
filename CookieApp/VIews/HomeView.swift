@@ -15,7 +15,18 @@ import AVFoundation
 struct HomeView: View {
     @Binding var selectedTab: Int
     @State private var boxHeight: CGFloat = 0.75
-    @State private var player = AVPlayer()
+    @State private var player: AVPlayer = {
+          // Initialize the AVPlayer with looping functionality
+          let url = Bundle.main.url(forResource: "EOSC Reel", withExtension: "mp4")!
+          let player = AVPlayer(url: url)
+        player.isMuted = false // Optional: Mute the video
+        player.actionAtItemEnd = .none // Prevent stopping at the end
+          NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: player.currentItem, queue: .main) { _ in
+              player.seek(to: .zero)
+              player.play()
+          }
+          return player
+      }()
     @State private var showNutritionalInfo = false
     @State private var selectedCookie: String?
 
