@@ -8,9 +8,6 @@
 import SwiftUI
 import AVKit
 
-import SwiftUI
-import AVKit
-
 struct AboutUsView: View {
     var body: some View {
         ScrollView {
@@ -22,13 +19,6 @@ struct AboutUsView: View {
                     .foregroundColor(.primary)
                     .multilineTextAlignment(.center)
                     .padding(.top)
-
-                // Local Video Player
-                VideoPlayer(player: AVPlayer(url: Bundle.main.url(forResource: "EOSC-reel", withExtension: "mov")!))
-                    .frame(height: 300)
-                    .cornerRadius(10)
-                    .shadow(radius: 5)
-                    .padding(.horizontal)
 
                 // About Us Text
                 Text("""
@@ -43,8 +33,6 @@ struct AboutUsView: View {
         }
     }
 }
-
-
 
 struct AboutUsView_Previews: PreviewProvider {
     static var previews: some View {
