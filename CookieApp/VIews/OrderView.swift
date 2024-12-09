@@ -1,34 +1,10 @@
-//
-//  OrderView.swift
-//  EvesOriginalSinCookies
-//
-//  Created by Daniel Baroi on 10/5/24.
-//
-
 import SwiftUI
 import AVKit
-import UIKit
-import AVFoundation
-
-struct CheckboxToggleStyle: ToggleStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        HStack {
-            Image(systemName: configuration.isOn ? "checkmark.square.fill" : "square")
-                .foregroundColor(configuration.isOn ? .blue : .gray)
-                .onTapGesture {
-                    configuration.isOn.toggle()
-                }
-            configuration.label
-        }
-    }
-}
 
 struct OrderView: View {
-    @State private var selectedBatter = ""
+    @State private var selectedBatter: String = ""
     @State private var selectedMixIns: [String] = []
-    @State private var showCustomizationForm = false
-    @State private var orderCount = 0 // Track the order count for favorite feature
-    @State private var isFavorite = false // Track if the cookie is marked as favorite
+    @State private var cartItems: [String: Int] = [:] // Tracks items in the cart
 
     let batters = ["Chocolate Chip", "Peanut Butter", "Sugar Cookie"]
     let mixIns = [
@@ -43,155 +19,155 @@ struct OrderView: View {
     ]
 
     var body: some View {
-        GeometryReader { geometry in
+        ZStack {
+            // Background Video
+
+            // Main Content
             ScrollView {
-                VStack(spacing: 20) {
-                    // Image inside the black box
-                    Image("multiplecookie") // Replace with the actual image name
-                        .resizable()
-                        .scaledToFill()
-                        .frame(height: geometry.size.height * 0.6)
-                        .clipped()
+                VStack(spacing: 30) {
+                    // Title Section
+                    Text("Customize Your Cookie")
+                        .font(.system(size: 34, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(.top, 20)
+                        .shadow(radius: 3)
 
-                    // "Customize Your Perfect Cookie" section below the image
-                    VStack(spacing: 20) {
-                        Text("CUSTOMIZE YOUR PERFECT COOKIE!")
-                            .font(.system(size: 35, weight: .bold))
-                            .multilineTextAlignment(.center)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 10)
+                    // Batter Selection
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Choose Your Batter:")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .padding(.leading, 10)
 
-                        // Start Baking Button
-                        Button(action: {
-                            showCustomizationForm.toggle()
-                        }) {
-                            Text("Start Baking")
-                                .font(.system(size: 20, weight: .bold))
-                                .frame(width: geometry.size.width * 0.8, alignment: .center)
-                                .padding()
-                                .background(Color.black)
+                        HStack(spacing: 10) {
+                            ForEach(batters, id: \.self) { batter in
+                                Button(action: {
+                                    selectedBatter = batter
+                                }) {
+                                    Text(batter)
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .padding()
+                                        .frame(maxWidth: .infinity)
+                                        .background(selectedBatter == batter ? Color.blue : Color.white.opacity(0.7))
+                                        .foregroundColor(selectedBatter == batter ? .white : .black)
+                                        .cornerRadius(10)
+                                        .shadow(radius: 2)
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+
+                    // Mix-In Selection
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Choose Your Mix-Ins (Max 3):")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .padding(.leading, 10)
+
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 2), spacing: 10) {
+                            ForEach(mixIns, id: \.self) { mixIn in
+                                Button(action: {
+                                    if selectedMixIns.contains(mixIn) {
+                                        selectedMixIns.removeAll { $0 == mixIn }
+                                    } else if selectedMixIns.count < 3 {
+                                        selectedMixIns.append(mixIn)
+                                    }
+                                }) {
+                                    Text(mixIn)
+                                        .font(.system(size: 14))
+                                        .padding()
+                                        .frame(maxWidth: .infinity)
+                                        .background(selectedMixIns.contains(mixIn) ? Color.green : Color.white.opacity(0.7))
+                                        .foregroundColor(.black)
+                                        .cornerRadius(10)
+                                        .shadow(radius: 2)
+                                }
+                                .disabled(!selectedMixIns.contains(mixIn) && selectedMixIns.count >= 3)
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+
+                    // Selected Details
+                    if !selectedBatter.isEmpty || !selectedMixIns.isEmpty {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Your Selection:")
+                                .font(.headline)
                                 .foregroundColor(.white)
-                                .cornerRadius(10)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 20)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 20)
 
-                    // Show Customization Form if toggled
-                    if showCustomizationForm {
-                        VStack(spacing: 20) {
-                            Text("Custom Cookie")
-                                .font(.system(size: 25, weight: .bold))
-                                .padding(.top)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding()
-
-                            // Batter Type Picker
-                            VStack(alignment: .leading) {
-                                Text("Batter Type")
-                                    .font(.headline)
-                                    .padding(.bottom, 5)
-                                    .foregroundColor(.black)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding()
-
-                                ForEach(batters, id: \.self) { batter in
-                                    Toggle(isOn: Binding(
-                                        get: { selectedBatter == batter },
-                                        set: { isSelected in
-                                            if isSelected {
-                                                selectedBatter = batter
-                                            } else {
-                                                selectedBatter = ""
-                                            }
-                                        }
-                                    )) {
-                                        Text(batter)
-                                    }
-                                    .toggleStyle(CheckboxToggleStyle()) // Use Checkbox for batter selection
-                                    .padding(.horizontal)
-                                }
-                            }
-                            .padding(.top)
-
-                            // Mix-ins Selection
-                            VStack(alignment: .leading) {
-                                Text("Cookie Mix-ins")
-                                    .font(.headline)
-                                    .padding(.bottom, 5)
-                                    .foregroundColor(.black)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding()
-
-                                ForEach(mixIns, id: \.self) { mixIn in
-                                    Toggle(isOn: Binding(
-                                        get: { selectedMixIns.contains(mixIn) },
-                                        set: { isSelected in
-                                            if isSelected {
-                                                if selectedMixIns.count < 3 {
-                                                    selectedMixIns.append(mixIn)
-                                                }
-                                            } else {
-                                                selectedMixIns.removeAll { $0 == mixIn }
-                                            }
-                                        }
-                                    )) {
-                                        Text(mixIn)
-                                    }
-                                    .toggleStyle(CheckboxToggleStyle()) // Use Checkbox for mix-ins
-                                    .disabled(!selectedMixIns.contains(mixIn) && selectedMixIns.count >= 3)
-                                    .padding(.horizontal)
-                                }
+                            if !selectedBatter.isEmpty {
+                                Text("Batter: \(selectedBatter)")
+                                    .font(.subheadline)
+                                    .foregroundColor(.white)
                             }
 
-                            // Order Button
-//                            Button(action: placeOrder) {
-//                                Text("Order Now")
-//                                    .font(.headline)
-//                                    .padding()
-//                                    .frame(maxWidth: .infinity)
-//                                    .background(selectedBatter.isEmpty ? Color.gray : Color.blue)
-//                                    .foregroundColor(.white)
-//                                    .cornerRadius(10)
-//                            }
-//                            .disabled(selectedBatter.isEmpty) // Disable button if no batter is selected
-//                            .padding(.top)
-//                            
-//                            // Favorite Indicator
-//                            if isFavorite {
-//                                Text("This is your favorite cookie!")
-//                                    .foregroundColor(.red)
-//                                    .font(.subheadline)
-//                                    .padding(.top, 10)
-//                            }
+                            if !selectedMixIns.isEmpty {
+                                Text("Mix-Ins: \(selectedMixIns.joined(separator: ", "))")
+                                    .font(.subheadline)
+                                    .foregroundColor(.white)
+                            }
                         }
+                        .padding(.horizontal)
                     }
-                    
-                    Spacer()
+
+                    // Add to Cart Button
+                    Button(action: {
+                        let cookieName = "\(selectedBatter) with \(selectedMixIns.joined(separator: ", "))"
+                        cartItems[cookieName, default: 0] += 1
+                        selectedBatter = ""
+                        selectedMixIns.removeAll()
+                    }) {
+                        Text("Add to Cart")
+                            .font(.headline)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(selectedBatter.isEmpty || selectedMixIns.isEmpty ? Color.gray : Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                            .shadow(radius: 2)
+                    }
+                    .disabled(selectedBatter.isEmpty || selectedMixIns.isEmpty)
+                    .padding(.horizontal)
+
                 }
-                .padding(.bottom, 100) // Avoid overlap with bottom content
-                .background(Color(red: 1.0, green: 1.0, blue: 0.8)) // Consistent background color
+                .padding(.bottom, 50)
             }
-            .background(Color(red: 1.0, green: 1.0, blue: 0.8))
-            .ignoresSafeArea()
+            .background(Color.black.opacity(0.4)) // Background overlay for contrast
+
+            // Persistent Cart Icon
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    NavigationLink(destination: CartView(cartItems: $cartItems)) {
+                        HStack {
+                            Image(systemName: "cart")
+                                .foregroundColor(.white)
+                                .font(.title)
+                            if !cartItems.isEmpty {
+                                Text("\(cartItems.values.reduce(0, +))")
+                                    .font(.caption)
+                                    .foregroundColor(.white)
+                                    .padding(6)
+                                    .background(Color.red)
+                                    .clipShape(Circle())
+                            }
+                        }
+                        .padding()
+                        .background(Color.black.opacity(0.7))
+                        .cornerRadius(30)
+                        .shadow(radius: 3)
+                    }
+                    .padding()
+                }
+            }
         }
     }
-    
-    // MARK: - Functions
-    
-    private func placeOrder() {
-        // Increment order count and check for favorite status
-        orderCount += 1
-        if orderCount > 6 {
-            isFavorite = true
-        }
-        
-        // Reset selections after placing order
-        selectedBatter = ""
-        selectedMixIns.removeAll()
+}
+
+struct OrderView_Previews: PreviewProvider {
+    static var previews: some View {
+        OrderView()
     }
 }
