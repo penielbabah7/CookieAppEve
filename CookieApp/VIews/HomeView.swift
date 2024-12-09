@@ -5,8 +5,6 @@
 //  Created by Daniel Baroi on 10/5/24.
 //
 
-// Hello my name is Daniel B
-
 import SwiftUI
 import AVKit
 import UIKit
@@ -14,65 +12,93 @@ import AVFoundation
 
 struct HomeView: View {
     @Binding var selectedTab: Int
+    @Binding var cartItems: [String: Int] // Shared cart state
     @State private var boxHeight: CGFloat = 0.75
     @State private var player: AVPlayer = {
-          // Initialize the AVPlayer with looping functionality
-          let url = Bundle.main.url(forResource: "EOSC Reel", withExtension: "mp4")!
-          let player = AVPlayer(url: url)
-        player.isMuted = false // Optional: Mute the video
-        player.actionAtItemEnd = .none // Prevent stopping at the end
-          NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: player.currentItem, queue: .main) { _ in
-              player.seek(to: .zero)
-              player.play()
-          }
-          return player
-      }()
-    @State private var showNutritionalInfo = false
+        // Initialize the AVPlayer with looping functionality
+        let url = Bundle.main.url(forResource: "EOSC Reel", withExtension: "mp4")!
+        let player = AVPlayer(url: url)
+        player.isMuted = false
+        player.actionAtItemEnd = .none
+        NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: player.currentItem, queue: .main) { _ in
+            player.seek(to: .zero)
+            player.play()
+        }
+        return player
+    }()
+    @State private var showAddToCartPrompt = false
     @State private var selectedCookie: String?
-
-    
 
     var body: some View {
         GeometryReader { geometry in
             ScrollView {
                 VStack(spacing: 20) {
-                    // Video Player (unchanged)
+                    // Video Player
                     VideoPlayer(player: player)
-                        .frame(height: geometry.size.height * boxHeight)
+                        //.resizable()
+                        .ignoresSafeArea()
+                        .scaledToFill()
+                        .edgesIgnoringSafeArea(.all)
+                        
+                        .frame(width: geometry.size.width, height: geometry.size.height * boxHeight)
+                        .aspectRatio(contentMode: .fill)
+                        .clipped()
                         .padding(.horizontal, -20)
+                        //.padding(.horizontal,20)
                         .padding(.vertical, -30)
                         .onAppear {
                             if let videoURL = Bundle.main.url(forResource: "EOSC Reel", withExtension: "mp4") {
                                 player = AVPlayer(url: videoURL)
                                 player.play()
-                              
                             }
                         }
-                        .animation(.easeInOut, value: boxHeight)
+                        //.animation(.easeInOut, value: boxHeight)
 
-                    // Cookie of the Month Section
+                    // Cookies of the Month
                     VStack(alignment: .leading, spacing: 20) {
                         Text("Cookies of the Month")
                             .font(.system(size: 35, weight: .bold))
                             .padding(.horizontal, -5)
                             .padding(.vertical, 10)
 
-                        CookieButton(cookieName: "Strawberry")
-                        CookieButton(cookieName: "Confetti")
+                        ForEach(["Strawberry", "Confetti"], id: \.self) { cookieName in
+                            Button(action: {
+                                selectedCookie = cookieName
+                                showAddToCartPrompt = true
+                            }) {
+                                VStack(alignment: .leading) {
+                                    Text(cookieName)
+                                        .font(.system(size: 25, weight: .bold))
+                                    Text("Cookie")
+                                        .font(.system(size: 25, weight: .bold))
+                                }
+                                .foregroundColor(.black)
+                                .padding(.horizontal)
+                            }
+                            .alert(isPresented: $showAddToCartPrompt) {
+                                Alert(
+                                    title: Text("Add \(selectedCookie ?? "") to Cart?"),
+                                    message: Text("Would you like to add this cookie to your cart?"),
+                                    primaryButton: .default(Text("Yes")) {
+                                        if let cookie = selectedCookie {
+                                            cartItems[cookie, default: 0] += 1
+                                        }
+                                    },
+                                    secondaryButton: .cancel()
+                                )
+                            }
+                        }
 
-                        // Order Now Button
-                        Button(action: {
-                            selectedTab = 1 // Switch to Order Tab
-                        }) {
-                            Text("Order Now")
-                                .font(.system(size: 20, weight: .bold))
-                                .frame(maxWidth: .infinity)
+                        // View Cart Button
+                        NavigationLink(destination: CartView(cartItems: $cartItems)) {
+                            Text("View Cart")
+                                .font(.headline)
                                 .padding()
-                                .background(Color.black)
+                                .frame(maxWidth: .infinity)
+                                .background(Color.green)
                                 .foregroundColor(.white)
                                 .cornerRadius(10)
                         }
-                        .padding(.horizontal)
                     }
                     .padding(.top, 20)
                 }
@@ -82,63 +108,6 @@ struct HomeView: View {
             }
             .background(Color(red: 1.0, green: 1.0, blue: 0.8))
             .ignoresSafeArea()
-            .sheet(isPresented: $showNutritionalInfo) {
-                NutritionalInfoView(cookieName: selectedCookie ?? "")
-            }
-        }
-    }
-    
-    private func CookieButton(cookieName: String) -> some View {
-        VStack(alignment: .leading) {
-            Button(action: {
-                selectedTab = 1 // Switch to Order Tab
-            }) {
-                Text(cookieName)
-                    .font(.system(size: 25, weight: .bold))
-                Text("Cookie")
-                    .font(.system(size: 25, weight: .bold))
-            }
-            .foregroundColor(.black)
-            
-            Button(action: {
-                selectedCookie = cookieName
-                showNutritionalInfo = true
-            }) {
-                Text("Learn More")
-                    .font(.system(size: 15))
-                    .foregroundColor(.blue)
-            }
-            .padding(.top, 5)
-        }
-        .padding(.horizontal)
-    }
-}
-struct NutritionalInfoView: View {
-    let cookieName: String
-    @Environment(\.presentationMode) var presentationMode
-
-    var body: some View {
-        NavigationView {
-            VStack {
-                Text("Nutritional Information for \(cookieName) Cookie")
-                    .font(.headline)
-                    .padding()
-                
-                // Add your nutritional information here
-                Text("Calories: 250")
-                Text("Fat: 12g")
-                Text("Carbs: 33g")
-                Text("Protein: 3g")
-                
-                Spacer()
-            }
-            .navigationBarItems(trailing: Button("Close") {
-                presentationMode.wrappedValue.dismiss()
-            })
         }
     }
 }
-
-
-
-

@@ -4,19 +4,20 @@
 //
 //  Created by Daniel Baroi on 9/23/24.
 //
+
 import SwiftUI
 import AVKit
 import AVFoundation
 
 struct MenuView: View {
     @State private var selectedTab = 0
+    @State private var cartItems: [String: Int] = [:] // Shared cart state
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            
             // Home Tab
             NavigationView {
-                HomeView(selectedTab: $selectedTab)
+                HomeView(selectedTab: $selectedTab, cartItems: $cartItems)
                     .applyBackground()
             }
             .tabItem {
@@ -27,7 +28,7 @@ struct MenuView: View {
 
             // Order Tab
             NavigationView {
-                OrderView()
+                OrderView(cartItems: $cartItems)
                     .applyBackground()
             }
             .tabItem {
@@ -35,7 +36,7 @@ struct MenuView: View {
                 Text("Order")
             }
             .tag(1)
-            
+
             // Rewards Tab
             NavigationView {
                 RewardsView()
@@ -75,4 +76,3 @@ extension View {
         self.background(Color(red: 1.0, green: 1.0, blue: 0.8).ignoresSafeArea())
     }
 }
-

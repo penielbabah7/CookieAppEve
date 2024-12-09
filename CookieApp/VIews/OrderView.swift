@@ -2,9 +2,9 @@ import SwiftUI
 import AVKit
 
 struct OrderView: View {
+    @Binding var cartItems: [String: Int] // Shared cart state
     @State private var selectedBatter: String = ""
     @State private var selectedMixIns: [String] = []
-    @State private var cartItems: [String: Int] = [:] // Tracks items in the cart
 
     let batters = ["Chocolate Chip", "Peanut Butter", "Sugar Cookie"]
     let mixIns = [
@@ -18,97 +18,58 @@ struct OrderView: View {
         "Apples", "Butterscotch Chips"
     ]
 
+    @State private var showCart = false
+
     var body: some View {
         ZStack {
-            // Background Video
-
             // Main Content
             ScrollView {
                 VStack(spacing: 30) {
                     // Title Section
                     Text("Customize Your Cookie")
                         .font(.system(size: 34, weight: .bold))
-                        .foregroundColor(.white)
                         .padding(.top, 20)
-                        .shadow(radius: 3)
 
                     // Batter Selection
-                    VStack(alignment: .leading, spacing: 10) {
+                    VStack(alignment: .leading) {
                         Text("Choose Your Batter:")
                             .font(.headline)
-                            .foregroundColor(.white)
-                            .padding(.leading, 10)
 
-                        HStack(spacing: 10) {
-                            ForEach(batters, id: \.self) { batter in
-                                Button(action: {
-                                    selectedBatter = batter
-                                }) {
-                                    Text(batter)
-                                        .font(.system(size: 16, weight: .semibold))
-                                        .padding()
-                                        .frame(maxWidth: .infinity)
-                                        .background(selectedBatter == batter ? Color.blue : Color.white.opacity(0.7))
-                                        .foregroundColor(selectedBatter == batter ? .white : .black)
-                                        .cornerRadius(10)
-                                        .shadow(radius: 2)
-                                }
+                        ForEach(batters, id: \.self) { batter in
+                            Button(action: {
+                                selectedBatter = batter
+                            }) {
+                                Text(batter)
+                                    .padding()
+                                    .frame(maxWidth: .infinity)
+                                    .background(selectedBatter == batter ? Color.blue : Color.gray.opacity(0.3))
+                                    .foregroundColor(.white)
+                                    .cornerRadius(8)
                             }
                         }
                     }
-                    .padding(.horizontal)
 
                     // Mix-In Selection
-                    VStack(alignment: .leading, spacing: 10) {
+                    VStack(alignment: .leading) {
                         Text("Choose Your Mix-Ins (Max 3):")
                             .font(.headline)
-                            .foregroundColor(.white)
-                            .padding(.leading, 10)
 
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 2), spacing: 10) {
-                            ForEach(mixIns, id: \.self) { mixIn in
-                                Button(action: {
-                                    if selectedMixIns.contains(mixIn) {
-                                        selectedMixIns.removeAll { $0 == mixIn }
-                                    } else if selectedMixIns.count < 3 {
-                                        selectedMixIns.append(mixIn)
-                                    }
-                                }) {
-                                    Text(mixIn)
-                                        .font(.system(size: 14))
-                                        .padding()
-                                        .frame(maxWidth: .infinity)
-                                        .background(selectedMixIns.contains(mixIn) ? Color.green : Color.white.opacity(0.7))
-                                        .foregroundColor(.black)
-                                        .cornerRadius(10)
-                                        .shadow(radius: 2)
+                        ForEach(mixIns, id: \.self) { mixIn in
+                            Button(action: {
+                                if selectedMixIns.contains(mixIn) {
+                                    selectedMixIns.removeAll { $0 == mixIn }
+                                } else if selectedMixIns.count < 3 {
+                                    selectedMixIns.append(mixIn)
                                 }
-                                .disabled(!selectedMixIns.contains(mixIn) && selectedMixIns.count >= 3)
+                            }) {
+                                Text(mixIn)
+                                    .padding()
+                                    .frame(maxWidth: .infinity)
+                                    .background(selectedMixIns.contains(mixIn) ? Color.green : Color.gray.opacity(0.3))
+                                    .foregroundColor(.white)
+                                    .cornerRadius(8)
                             }
                         }
-                    }
-                    .padding(.horizontal)
-
-                    // Selected Details
-                    if !selectedBatter.isEmpty || !selectedMixIns.isEmpty {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Your Selection:")
-                                .font(.headline)
-                                .foregroundColor(.white)
-
-                            if !selectedBatter.isEmpty {
-                                Text("Batter: \(selectedBatter)")
-                                    .font(.subheadline)
-                                    .foregroundColor(.white)
-                            }
-
-                            if !selectedMixIns.isEmpty {
-                                Text("Mix-Ins: \(selectedMixIns.joined(separator: ", "))")
-                                    .font(.subheadline)
-                                    .foregroundColor(.white)
-                            }
-                        }
-                        .padding(.horizontal)
                     }
 
                     // Add to Cart Button
@@ -119,28 +80,25 @@ struct OrderView: View {
                         selectedMixIns.removeAll()
                     }) {
                         Text("Add to Cart")
-                            .font(.headline)
                             .padding()
                             .frame(maxWidth: .infinity)
                             .background(selectedBatter.isEmpty || selectedMixIns.isEmpty ? Color.gray : Color.blue)
                             .foregroundColor(.white)
-                            .cornerRadius(10)
-                            .shadow(radius: 2)
+                            .cornerRadius(8)
                     }
                     .disabled(selectedBatter.isEmpty || selectedMixIns.isEmpty)
-                    .padding(.horizontal)
-
                 }
-                .padding(.bottom, 50)
+                .padding()
             }
-            .background(Color.black.opacity(0.4)) // Background overlay for contrast
 
-            // Persistent Cart Icon
+            // Small Cart Icon at the Bottom-Right Corner
             VStack {
                 Spacer()
                 HStack {
                     Spacer()
-                    NavigationLink(destination: CartView(cartItems: $cartItems)) {
+                    Button(action: {
+                        showCart = true
+                    }) {
                         HStack {
                             Image(systemName: "cart")
                                 .foregroundColor(.white)
@@ -163,11 +121,8 @@ struct OrderView: View {
                 }
             }
         }
-    }
-}
-
-struct OrderView_Previews: PreviewProvider {
-    static var previews: some View {
-        OrderView()
+        .sheet(isPresented: $showCart) {
+            CartView(cartItems: $cartItems)
+        }
     }
 }
