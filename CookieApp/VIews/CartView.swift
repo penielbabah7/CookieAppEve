@@ -1,136 +1,185 @@
-//
-//  CartView.swift
-//  CookieApp
-//
-//  Created by Daniel Baroi on 12/8/24.
-//
-
-import Foundation
 import SwiftUI
 
 struct CartView: View {
     @Binding var cartItems: [String: Int] // A dictionary to track item names and their quantities
     var pricePerCookie: Double = 4.00
 
-    // State variables for customer information
-    @State private var customerName: String = ""
-    @State private var customerAddress: String = ""
     @State private var showAlert = false
+    private let paypalUsername = "DanielBaroi" // Replace with your PayPal.me username
+    private let venmoUsername = "Daniel-Baroi"   // Replace with your Venmo username
 
     var body: some View {
         NavigationView {
-            VStack {
+            VStack(spacing: 16) {
                 if cartItems.isEmpty {
-                    Text("Your cart is empty. Start customizing your cookie!")
-                        .font(.headline)
-                        .padding()
+                    VStack(spacing: 20) {
+                        Image(systemName: "cart")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 100, height: 100)
+                            .foregroundColor(.gray)
+
+                        Text("Your cart is empty")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.gray)
+
+                        Text("Start customizing your cookie to add items!")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
                 } else {
-                    // List of items in the cart
-                    List {
-                        ForEach(cartItems.keys.sorted(), id: \.self) { cookie in
-                            HStack {
-                                Text(cookie)
-                                Spacer()
-                                Text("x \(cartItems[cookie] ?? 0)")
-                                Spacer()
-                                Text("$\((Double(cartItems[cookie] ?? 0) * pricePerCookie), specifier: "%.2f")")
-                                Spacer()
-                                Button(action: {
-                                    cartItems[cookie] = nil
-                                }) {
-                                    Text("Remove")
-                                        .foregroundColor(.red)
+                    ScrollView {
+                        VStack(spacing: 16) {
+                            // Cart Items Section
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Your Items")
+                                    .font(.title3)
+                                    .fontWeight(.semibold)
+                                    .padding(.horizontal)
+
+                                ForEach(cartItems.keys.sorted(), id: \.self) { cookie in
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "circle.fill")
+                                            .resizable()
+                                            .frame(width: 30, height: 30)
+                                            .foregroundColor(.orange)
+
+                                        VStack(alignment: .leading) {
+                                            HStack {
+                                                Text(cookie)
+                                                    .font(.body)
+                                                    .fontWeight(.semibold)
+
+                                                // Cookie count next to the name
+                                                Text("(x\(cartItems[cookie] ?? 0))")
+                                                    .font(.subheadline)
+                                                    .foregroundColor(.secondary)
+                                            }
+                                            Text("$\((Double(cartItems[cookie] ?? 0) * pricePerCookie), specifier: "%.2f")")
+                                                .font(.subheadline)
+                                                .foregroundColor(.secondary)
+                                        }
+                                        Spacer()
+
+                                        Button(action: {
+                                            cartItems[cookie] = nil
+                                        }) {
+                                            Image(systemName: "trash")
+                                                .foregroundColor(.red)
+                                        }
+                                    }
+                                    .padding()
+                                    .background(Color.white)
+                                    .cornerRadius(12)
+                                    .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
                                 }
                             }
-                        }
-                    }
-                    .listStyle(PlainListStyle())
-                    .padding()
 
-                    // Total amount
-                    Text("Total: $\(cartItems.values.reduce(0) { $0 + Double($1) } * pricePerCookie, specifier: "%.2f")")
-                        .font(.headline)
-                        .padding()
+                            Divider()
 
-                    // Customer Information Input
-                    VStack {
-                        TextField("Enter your name", text: $customerName)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .padding()
+                            // Total Amount Section
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Order Summary")
+                                    .font(.title3)
+                                    .fontWeight(.semibold)
+                                    .padding(.horizontal)
 
-                        TextField("Enter your address", text: $customerAddress)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .padding()
-                    }
-
-                    // Order Summary
-                    Text("Order Summary:")
-                        .font(.headline)
-                        .padding(.top)
-
-                    Text("You are paying for \(cartItems.keys.joined(separator: ", ")) cookies.")
-                        .font(.subheadline)
-                        .padding(.bottom)
-
-                    // Checkout Buttons
-                    HStack {
-                        // Pay with PayPal
-                        Button(action: {
-                            if customerName.isEmpty || customerAddress.isEmpty {
-                                showAlert = true
-                                return
-                            }
-
-                            let totalAmount = cartItems.values.reduce(0) { $0 + Double($1) } * pricePerCookie
-                            let description = "Payment for \(cartItems.keys.joined(separator: ", ")) cookies by \(customerName). Address: \(customerAddress)"
-                            let paypalURL = "https://paypal.me/DanielBaroi/\(totalAmount)?note=\(description.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
-
-                            if let url = URL(string: paypalURL) {
-                                UIApplication.shared.open(url)
-                            }
-                        }) {
-                            Text("Pay with PayPal")
+                                HStack {
+                                    Text("Total:")
+                                        .font(.headline)
+                                    Spacer()
+                                    Text("$\(cartItems.values.reduce(0) { $0 + Double($1) } * pricePerCookie, specifier: "%.2f")")
+                                        .font(.headline)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.green)
+                                }
                                 .padding()
-                                .background(Color.blue)
-                                .foregroundColor(.white)
-                                .cornerRadius(8)
-                        }
-                        .disabled(cartItems.isEmpty)
-
-                        // Pay with Venmo
-                        Button(action: {
-                            if customerName.isEmpty || customerAddress.isEmpty {
-                                showAlert = true
-                                return
+                                .background(Color.green.opacity(0.1))
+                                .cornerRadius(12)
+                                .padding(.horizontal)
                             }
 
-                            let totalAmount = cartItems.values.reduce(0) { $0 + Double($1) } * pricePerCookie
-                            let description = "Payment for \(cartItems.keys.joined(separator: ", ")) cookies by \(customerName). Address: \(customerAddress)"
-                            let venmoURL = "https://venmo.com/u/Daniel-Baroi?txn=pay&amount=\(totalAmount)&note=\(description.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
+                            Divider()
 
-                            if let url = URL(string: venmoURL) {
-                                UIApplication.shared.open(url)
+                            // Payment Options Section
+                            VStack(spacing: 10) {
+                                Text("Payment Options")
+                                    .font(.title3)
+                                    .fontWeight(.semibold)
+                                    .padding(.horizontal)
+
+                                VStack(spacing: 10) {
+                                    // Pay with PayPal
+                                    Button(action: {
+                                        openPayPalLink()
+                                    }) {
+                                        HStack {
+                                            Image(systemName: "dollarsign.circle")
+                                                .foregroundColor(.white)
+                                            Text("Pay with PayPal")
+                                                .font(.headline)
+                                        }
+                                        .padding()
+                                        .frame(maxWidth: .infinity)
+                                        .background(Color.blue)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(12)
+                                    }
+
+                                    // Pay with Venmo
+                                    Button(action: {
+                                        openVenmoLink()
+                                    }) {
+                                        HStack {
+                                            Image(systemName: "dollarsign.circle")
+                                                .foregroundColor(.white)
+                                            Text("Pay with Venmo")
+                                                .font(.headline)
+                                        }
+                                        .padding()
+                                        .frame(maxWidth: .infinity)
+                                        .background(Color.purple)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(12)
+                                    }
+                                }
+                                .padding(.horizontal)
                             }
-                        }) {
-                            Text("Pay with Venmo")
-                                .padding()
-                                .background(Color.purple)
-                                .foregroundColor(.white)
-                                .cornerRadius(8)
                         }
-                        .disabled(cartItems.isEmpty)
                     }
-                    .padding()
                 }
             }
             .navigationBarTitle("Your Cart", displayMode: .inline)
-            .alert(isPresented: $showAlert) {
-                Alert(
-                    title: Text("Missing Information"),
-                    message: Text("Please enter your name and address before proceeding to payment."),
-                    dismissButton: .default(Text("OK"))
-                )
-            }
+        }
+    }
+
+    // Helper Functions
+    func openPayPalLink() {
+        let totalAmount = cartItems.values.reduce(0) { $0 + Double($1) } * pricePerCookie
+        let paypalURL = "https://paypal.me/\(paypalUsername)/\(String(format: "%.2f", totalAmount))"
+
+        if let url = URL(string: paypalURL) {
+            UIApplication.shared.open(url)
+        }
+    }
+
+    func openVenmoLink() {
+        let totalAmount = cartItems.values.reduce(0) { $0 + Double($1) } * pricePerCookie
+        let description = "Payment for cookies: \(cartItems.keys.joined(separator: ", "))"
+        
+        // Venmo app URL scheme
+        let venmoAppURL = "venmo://paycharge?txn=pay&recipients=\(venmoUsername)&amount=\(String(format: "%.2f", totalAmount))&note=\(description.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
+
+        // Venmo web fallback URL
+        let venmoWebFallbackURL = "https://venmo.com/u/\(venmoUsername)?txn=pay&amount=\(String(format: "%.2f", totalAmount))&note=\(description.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
+
+        if let url = URL(string: venmoAppURL), UIApplication.shared.canOpenURL(url) {
+            UIApplication.shared.open(url)
+        } else if let fallbackURL = URL(string: venmoWebFallbackURL) {
+            UIApplication.shared.open(fallbackURL)
         }
     }
 }

@@ -10,7 +10,7 @@ struct HomeView: View {
         // Initialize the AVPlayer with looping functionality
         if let url = Bundle.main.url(forResource: "EOSC Reel", withExtension: "mp4") {
             let player = AVPlayer(url: url)
-            player.isMuted = false
+            player.isMuted = true
             player.actionAtItemEnd = .none
             NotificationCenter.default.addObserver(
                 forName: .AVPlayerItemDidPlayToEndTime,
