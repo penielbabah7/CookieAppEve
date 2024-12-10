@@ -17,6 +17,11 @@ struct OrderView: View {
 
     var body: some View {
         ZStack {
+            Image("Toppings Falling") // Replace with your actual image name
+                            .resizable()
+                           // .scale()
+                            .ignoresSafeArea()
+                            .opacity(0.3)
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     // Title Section
