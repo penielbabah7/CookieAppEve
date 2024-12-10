@@ -5,15 +5,9 @@
 //  Created by Peniel Babah on 12/2/24.
 //
 import SwiftUI
-import CoreLocation
 
 struct Step3View: View {
     @EnvironmentObject var signUpViewModel: SignUpViewModel
-    @EnvironmentObject var authViewModel: AuthViewModel
-
-    @State private var verificationSent = false
-    @State private var isCheckingVerification = false
-    @State private var verificationTimer: Timer?
 
     var body: some View {
         VStack(spacing: 20) {
@@ -34,27 +28,15 @@ struct Step3View: View {
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
 
-            Button(action: handleSendVerification) {
-                Text("Send Verification Email")
+            Button(action: handleNextStep) {
+                Text("Next")
                     .foregroundColor(.white)
                     .padding()
                     .frame(maxWidth: .infinity)
                     .background(Color.blue)
                     .cornerRadius(10)
             }
-            .disabled(signUpViewModel.password.isEmpty || signUpViewModel.confirmPassword.isEmpty || signUpViewModel.email.isEmpty)
-
-            if verificationSent {
-                Text("A verification email has been sent to \(signUpViewModel.email). Please check your inbox.")
-                    .foregroundColor(.green)
-                    .multilineTextAlignment(.center)
-                    .padding()
-            }
-
-            if isCheckingVerification {
-                ProgressView("Waiting for email verification...")
-                    .padding()
-            }
+            .disabled(!canProceedToNextStep)
 
             if let errorMessage = signUpViewModel.errorMessage {
                 Text(errorMessage)
@@ -65,19 +47,9 @@ struct Step3View: View {
             Spacer()
         }
         .padding()
-        .onAppear {
-            // Reset state when view appears
-            verificationSent = false
-            isCheckingVerification = false
-            signUpViewModel.errorMessage = nil
-        }
-        .onDisappear {
-            // Invalidate the timer if the view disappears
-            verificationTimer?.invalidate()
-        }
     }
 
-    private func handleSendVerification() {
+    private func handleNextStep() {
         guard isValidEmail(signUpViewModel.email) else {
             signUpViewModel.errorMessage = "Invalid email address."
             return
@@ -88,42 +60,17 @@ struct Step3View: View {
             return
         }
 
-        // Call the method to send the verification email
-        authViewModel.sendEmailVerification(email: signUpViewModel.email, password: signUpViewModel.password) { success in
-            if success {
-                verificationSent = true
-                startVerificationCheck()
-            } else {
-                signUpViewModel.errorMessage = authViewModel.errorMessage
-            }
-        }
-    }
-
-    private func startVerificationCheck() {
-        isCheckingVerification = true
-        verificationTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { timer in
-            authViewModel.checkEmailVerification { verified in
-                if verified {
-                    timer.invalidate()
-                    isCheckingVerification = false
-                    signUpViewModel.currentStep += 1 // Proceed to next step
-                }
-            }
-        }
-
-        // Stop the verification check after a timeout (e.g., 60 seconds)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 60) {
-            if isCheckingVerification {
-                verificationTimer?.invalidate()
-                isCheckingVerification = false
-                signUpViewModel.errorMessage = "Verification email not received. Please try again."
-            }
-        }
+        signUpViewModel.errorMessage = nil
+        signUpViewModel.currentStep += 1 // Proceed to the next step
     }
 
     private func isValidEmail(_ email: String) -> Bool {
         let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
         let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegEx)
         return emailPredicate.evaluate(with: email)
+    }
+
+    private var canProceedToNextStep: Bool {
+        !signUpViewModel.email.isEmpty && !signUpViewModel.password.isEmpty && !signUpViewModel.confirmPassword.isEmpty
     }
 }

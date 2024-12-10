@@ -21,12 +21,11 @@ struct SignUpView: View {
                 Step3View()
             } else if signUpViewModel.currentStep == 4 {
                 Step4View()
-            } else if signUpViewModel.currentStep == 5 {
-                Step5View()
             }
         }
         .animation(.easeInOut, value: signUpViewModel.currentStep)
         .transition(.slide)
     }
+    
+    
 }
-

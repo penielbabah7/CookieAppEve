@@ -13,6 +13,7 @@ struct SignUpFlowView: View {
 
     var body: some View {
         VStack {
+            // Step View Display
             switch signUpViewModel.currentStep {
             case 1:
                 Step1View()
@@ -23,14 +24,9 @@ struct SignUpFlowView: View {
             case 3:
                 Step3View()
                     .environmentObject(signUpViewModel)
-                    .environmentObject(authViewModel)
             case 4:
                 Step4View()
                     .environmentObject(signUpViewModel)
-            case 5:
-                Step5View()
-                    .environmentObject(signUpViewModel)
-                    .environmentObject(authViewModel)
             default:
                 Step1View()
                     .environmentObject(signUpViewModel)
@@ -47,7 +43,7 @@ struct SignUpFlowView: View {
 
                 Spacer()
 
-                Button(signUpViewModel.currentStep == 5 ? "Finish" : "Next") {
+                Button(signUpViewModel.currentStep == 4 ? "Finish" : "Next") {
                     signUpViewModel.proceedToNextStep()
                 }
                 .padding()

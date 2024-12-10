@@ -17,6 +17,7 @@ import SwiftUI
 
 class AuthViewModel: ObservableObject {
     @Published var isSignedIn: Bool = false
+    @Published var isGracePeriodActive: Bool = false
     @Published var isEmailVerificationInProgress: Bool = false // New state
     @Published var errorMessage: String?
     @Published var userName: String = ""
@@ -32,6 +33,10 @@ class AuthViewModel: ObservableObject {
     private let db = Firestore.firestore()
     private let storage = Storage.storage()
     private let auth = Auth.auth()
+    
+    var currentUserId: String? {
+            return auth.currentUser?.uid
+        }
 
 
     init() {
@@ -40,6 +45,7 @@ class AuthViewModel: ObservableObject {
 
     // MARK: - Check Authentication State
     func checkAuthState() {
+        isGracePeriodActive = false
             isLoading = true
             if let user = auth.currentUser {
                 user.reload { error in
@@ -216,25 +222,31 @@ class AuthViewModel: ObservableObject {
 
 
     func checkEmailVerification(completion: @escaping (Bool) -> Void) {
-            guard let user = Auth.auth().currentUser else {
-                completion(false)
-                self.errorMessage = "No user is currently logged in."
-                return
-            }
+        guard let user = Auth.auth().currentUser else {
+            completion(false)
+            errorMessage = "No user is currently logged in."
+            return
+        }
 
-            user.reload { error in
-                DispatchQueue.main.async {
-                    if let error = error {
-                        self.errorMessage = "Failed to reload user: \(error.localizedDescription)"
-                        completion(false)
+        user.reload { error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    self.errorMessage = "Failed to reload user: \(error.localizedDescription)"
+                    completion(false)
+                } else {
+                    if user.isEmailVerified {
+                        self.isGracePeriodActive = false
+                        self.isSignedIn = true
+                        completion(true)
                     } else {
-                        completion(user.isEmailVerified)
+                        completion(false)
                     }
                 }
             }
         }
+    }
 
-    
+
     // MARK: - Phone Verification
     func sendPhoneVerification(phoneNumber: String, completion: @escaping (Bool) -> Void) {
         PhoneAuthProvider.provider().verifyPhoneNumber(phoneNumber, uiDelegate: nil) { verificationID, error in
@@ -321,6 +333,7 @@ class AuthViewModel: ObservableObject {
                             completion(false)
                         } else {
                             self.errorMessage = nil
+                            self.startGracePeriod()
                             completion(true) // Email verification sent successfully
                         }
                     }
@@ -328,6 +341,17 @@ class AuthViewModel: ObservableObject {
             }
         }
     }
+
+    private func startGracePeriod() {
+        isGracePeriodActive = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 300) { [weak self] in
+            guard let self = self else { return }
+            if !self.isSignedIn {
+                self.signOut() // Force sign out if not verified within grace period
+            }
+        }
+    }
+
     
 
     // MARK: - Reset Password
