@@ -44,12 +44,10 @@ struct CartView: View {
                                     .fontWeight(.semibold)
                                     .padding(.horizontal)
 
-                                ForEach(cartItems.keys.sorted(), id: \.self) { cookie in
+                                ForEach(cartItems.keys.sorted(), id: \ .self) { cookie in
                                     HStack(spacing: 12) {
-                                        Image(systemName: "circle.fill")
-                                            .resizable()
-                                            .frame(width: 30, height: 30)
-                                            .foregroundColor(.orange)
+                                        Text("🍪") // Display the cookie emoji as a Text view
+                                            .font(.largeTitle)
 
                                         VStack(alignment: .leading) {
                                             HStack {

@@ -7,22 +7,29 @@
 import SwiftUI
 
 struct MoreOptionView: View {
-    let title: String
-    let iconName: String
+    var title: String
+    var iconName: String
 
     var body: some View {
         HStack {
             Image(systemName: iconName)
                 .font(.title2)
-                .foregroundColor(.black)
+                .foregroundColor(.blue)
+
             Text(title)
-                .font(.title2)
-                .foregroundColor(.black)
+                .font(.headline)
+                .foregroundColor(.primary)
+
             Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.headline)
+                .foregroundColor(.gray)
         }
         .padding()
         .background(Color.white)
         .cornerRadius(10)
-        .shadow(radius: 5)
+        .shadow(radius: 2)
     }
 }
+
