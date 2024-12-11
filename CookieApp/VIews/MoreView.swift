@@ -12,108 +12,118 @@ struct MoreView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                
                 // User Profile Summary
-                VStack(spacing: 8) {
-                    Image(systemName: "person.crop.circle.fill")
-                        .resizable()
-                        .frame(width: 80, height: 80)
-                        .foregroundColor(.gray)
-                    
-                    // Display the user's name and loyalty points
-                    Text("Welcome, \(authViewModel.userName)")
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                    
-                    Text("Loyalty Points: \(authViewModel.loyaltyPoints)")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                }
-                .padding(.vertical, 20)
-                
-                // More Options Header
-                Text("More Options")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .padding(.bottom, 10)
-                
-                // Grouped Sections
-                VStack(alignment: .leading) {
-                    
-                    // Account Settings Section
-                    Section(header: Text("Account Settings").font(.headline).padding(.leading)) {
-                        NavigationLink(destination: ProfileView()) {
-                            MoreOptionView(title: "Profile Management", iconName: "person.crop.circle")
-                        }
-                        NavigationLink(destination: OrderHistoryView()) {
-                            MoreOptionView(title: "Order History", iconName: "clock")
-                        }
-                    }
-                    
-                    // Support Section
-                    Section(header: Text("Support").font(.headline).padding(.leading)) {
-                        NavigationLink(destination: ContactUsView()) {
-                            MoreOptionView(title: "Contact Us", iconName: "phone")
-                        }
-                        NavigationLink(destination: FeedbackView()) {
-                            MoreOptionView(title: "Feedback & Reviews", iconName: "star")
-                        }
-                        NavigationLink(destination: CateringRequestView()) { // Catering Link
-                            MoreOptionView(title: "Request Catering", iconName: "tray.and.arrow.up")
-                        }
+                VStack(spacing: 12) {
+                    // Circular avatar with shadow
+                    ZStack {
+                        Circle()
+                            .fill(LinearGradient(
+                                gradient: Gradient(colors: [Color.blue.opacity(0.3), Color.blue]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ))
+                            .frame(width: 100, height: 100)
+                            .shadow(color: Color.blue.opacity(0.2), radius: 10, x: 0, y: 5)
+                        
+                        Image(systemName: "person.fill")
+                            .resizable()
+                            .frame(width: 60, height: 60)
+                            .foregroundColor(.white)
                     }
 
-                    // App Information Section
-                    Section(header: Text("App Information").font(.headline).padding(.leading)) {
-                        NavigationLink(destination: AboutUsView()) {
-                            MoreOptionView(title: "About Us", iconName: "info.circle")
-                        }
-                        NavigationLink(destination: AppSettingsView()) {
-                            MoreOptionView(title: "App Settings", iconName: "gear")
-                        }
-                        NavigationLink(destination: FAQView()) {
-                            MoreOptionView(title: "FAQ", iconName: "questionmark.circle")
-                        }
-                        NavigationLink(destination: PrivacyPolicyView()) {
-                            MoreOptionView(title: "Privacy Policy", iconName: "shield")
-                        }
-                        NavigationLink(destination: TermsOfServiceView()) {
-                            MoreOptionView(title: "Terms of Service", iconName: "doc.text")
-                        }
-                    }
-                    
-                    // Rewards and Offers Section
-                    Section(header: Text("Rewards and Offers").font(.headline).padding(.leading)) {
-                        NavigationLink(destination: SpecialOffersView()) {
-                            MoreOptionView(title: "Special Offers", iconName: "tag")
-                        }
-                        NavigationLink(destination: LoyaltyProgramView()) {
-                            MoreOptionView(title: "Loyalty Program", iconName: "star.fill")
-                        }
-                        NavigationLink(destination: EventsNewsView()) {
-                            MoreOptionView(title: "Events & News", iconName: "calendar")
-                        }
-                    }
+                    // Welcome message and loyalty points
+                    Text("Welcome, \(authViewModel.userName)")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.primary)
+
+                    Text("Loyalty Points: \(authViewModel.loyaltyPoints)")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
                 }
-                
+                .padding(.top, 40)
+
+
+                // Essential Options Section
+                VStack(alignment: .leading, spacing: 30) {
+                    SectionView(title: "My Account", options: [
+                        NavigationOption(title: "Profile Management", iconName: "person.crop.circle", destination: ProfileView()),
+                        NavigationOption(title: "Order History", iconName: "clock", destination: OrderHistoryView())
+                    ])
+
+                    SectionView(title: "Support & Info", options: [
+                        NavigationOption(title: "Contact Us", iconName: "phone", destination: ContactUsView()),
+                        NavigationOption(title: "About Us", iconName: "info.circle", destination: AboutUsView())
+                    ])
+
+                    SectionView(title: "Rewards & Offers", options: [
+                        NavigationOption(title: "Special Offers", iconName: "tag", destination: SpecialOffersView()),
+                        NavigationOption(title: "Loyalty Program", iconName: "star.fill", destination: LoyaltyProgramView())
+                    ])
+                }
+
                 // Logout Option
                 Button(action: {
                     authViewModel.signOut()
                 }) {
-                    MoreOptionView(title: "Logout", iconName: "arrow.right.circle")
-                        .foregroundColor(.white)
-                        .padding()
-                        .background(Color.red)
-                        .cornerRadius(10)
+                    HStack {
+                        Image(systemName: "arrow.right.circle")
+                            .font(.title2)
+                        Text("Logout")
+                            .font(.headline)
+                            .fontWeight(.bold)
+                    }
+                    .foregroundColor(.white)
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Color.red)
+                    .cornerRadius(15)
                 }
                 .padding(.vertical, 20)
             }
             .padding()
-            .background(Color(red: 1.0, green: 1.0, blue: 0.8))
-            .ignoresSafeArea()
+            .background(Color(.systemBackground))
         }
     }
 }
+
+struct SectionView: View {
+    var title: String
+    var options: [NavigationOption]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 15) {
+            Text(title)
+                .font(.headline)
+                .foregroundColor(.secondary)
+                .padding(.leading, 15)
+
+            ForEach(options) { option in
+                NavigationLink(destination: option.destination) {
+                    MoreOptionView(title: option.title, iconName: option.iconName)
+                }
+            }
+        }
+        .padding()
+        .background(Color(.systemGray6))
+        .cornerRadius(15)
+        .shadow(radius: 5)
+    }
+}
+
+struct NavigationOption: Identifiable {
+    var id = UUID()
+    var title: String
+    var iconName: String
+    var destination: AnyView
+
+    init<Content: View>(title: String, iconName: String, destination: Content) {
+        self.title = title
+        self.iconName = iconName
+        self.destination = AnyView(destination)
+    }
+}
+
 
 struct MoreView_Previews: PreviewProvider {
     static var previews: some View {

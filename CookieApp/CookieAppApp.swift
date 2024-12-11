@@ -12,6 +12,8 @@ import UIKit
 import AVFoundation
 
 @main
+
+
 struct YourApp: App {
     @StateObject private var authViewModel = AuthViewModel()
     @StateObject private var signUpViewModel = SignUpViewModel()

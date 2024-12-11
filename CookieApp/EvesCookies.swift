@@ -12,6 +12,9 @@ import UserNotifications
 
 // Define an AppDelegate class to handle Firebase setup
 class AppDelegate: NSObject, UIApplicationDelegate {
+    
+  
+    
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         // Initialize Firebase
@@ -45,7 +48,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             month: 12,
             day: 25
         )
-
+        
         // Fetch the user ID from Firebase Authentication
         let userId = Auth.auth().currentUser?.uid ?? "defaultUserId" // Replace "defaultUserId" with a valid fallback if needed
         let userDataManager = UserDataManager()
@@ -57,7 +60,9 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                 print("User data not found.")
             }
         }
-
+        
         return true
     }
+        
+    
 }
