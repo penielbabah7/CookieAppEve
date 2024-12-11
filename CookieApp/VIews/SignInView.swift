@@ -7,13 +7,11 @@ struct SignInView: View {
     @State private var password = ""
     @State private var isSignUpActive = false
     @State private var showForgotPasswordSheet = false
-    @State private var isLoading = false
-    
+
     private var player: AVPlayer = {
         let url = Bundle.main.url(forResource: "Woman Adding Cookies", withExtension: "mp4")!
         let player = AVPlayer(url: url)
         player.isMuted = true
-        player.play()
         player.actionAtItemEnd = .none
         NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: player.currentItem, queue: .main) { _ in
             player.seek(to: .zero)
@@ -21,65 +19,55 @@ struct SignInView: View {
         }
         return player
     }()
-    
+
     var body: some View {
         ZStack {
             // Background Video
             VideoPlayer(player: player)
                 .scaledToFill()
-                .edgesIgnoringSafeArea(.all) // Full-screen video
+                .edgesIgnoringSafeArea(.all)
                 .onAppear {
                     player.play()
                 }
-            
+
             // Foreground Content
             VStack {
-                Spacer() // Push content downward
-                
+                Spacer()
+
                 VStack(spacing: 15) {
                     Text("Sign In")
                         .font(.largeTitle)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
 
-                    // Email TextField with custom placeholder
+                    // Email TextField
                     TextField("", text: $email)
                         .placeholder(when: email.isEmpty) {
                             Text("Email")
-                                .foregroundColor(Color.white.opacity(0.8))
+                                .foregroundColor(SwiftUI.Color.white.opacity(0.8))
                         }
                         .padding()
-                        .background(Color.white.opacity(0.2))
+                        .background(SwiftUI.Color.white.opacity(0.2))
                         .cornerRadius(5)
-                        .foregroundColor(.white)
-                        .autocapitalization(.none)
+                        .foregroundColor(SwiftUI.Color.white)
+                        .textInputAutocapitalization(.none) // For iOS 16+
 
-                    // Password SecureField with custom placeholder
+
+                    // Password SecureField
                     SecureField("", text: $password)
                         .placeholder(when: password.isEmpty) {
                             Text("Password")
-                                .foregroundColor(Color.white.opacity(0.8))
+                                .foregroundColor(SwiftUI.Color.white.opacity(0.8))
                         }
                         .padding()
-                        .background(Color.white.opacity(0.2))
+                        .background(SwiftUI.Color.white.opacity(0.2))
                         .cornerRadius(5)
-                        .foregroundColor(.white)
+                        .foregroundColor(SwiftUI.Color.white)
+                        .textInputAutocapitalization(.none) // For iOS 16+
 
                     // Sign-In Button
-                    Button(action: {
-                        if isValidEmail(email) {
-                            isLoading = true
-                            authViewModel.signIn(email: email, password: password) { success in
-                                isLoading = false
-                                if !success {
-                                    authViewModel.errorMessage = "Failed to sign in. Check your credentials."
-                                }
-                            }
-                        } else {
-                            authViewModel.errorMessage = "Invalid email format."
-                        }
-                    }) {
-                        if isLoading {
+                    Button(action: handleSignIn) {
+                        if authViewModel.isLoading {
                             ProgressView()
                                 .padding()
                                 .frame(maxWidth: .infinity)
@@ -94,7 +82,7 @@ struct SignInView: View {
                                 .cornerRadius(10)
                         }
                     }
-                    .disabled(isLoading)
+                    .disabled(authViewModel.isLoading)
 
                     if let errorMessage = authViewModel.errorMessage {
                         Text(errorMessage)
@@ -102,7 +90,7 @@ struct SignInView: View {
                             .padding(.top, 5)
                     }
 
-                    // Forgot Password Link
+                    // Forgot Password
                     Button(action: {
                         showForgotPasswordSheet.toggle()
                     }) {
@@ -115,9 +103,9 @@ struct SignInView: View {
                     }
                 }
                 .padding()
-                .background(Color.black.opacity(0.4)) // Subtle background for content visibility
+                .background(Color.black.opacity(0.4))
                 .cornerRadius(15)
-                .frame(maxWidth: 350) // Adjust width to match previous size
+                .frame(maxWidth: 350)
                 .padding(.horizontal, 20)
 
                 Spacer()
@@ -135,7 +123,20 @@ struct SignInView: View {
                     }
                 }
             }
-            .padding(.bottom, 50) // Adjust spacing to keep proportions similar
+            .padding(.bottom, 50)
+        }
+    }
+
+    private func handleSignIn() {
+        guard isValidEmail(email) else {
+            authViewModel.errorMessage = "Invalid email format."
+            return
+        }
+
+        authViewModel.signIn(email: email, password: password) { success in
+            if !success {
+                authViewModel.errorMessage = "Failed to sign in. Check your credentials."
+            }
         }
     }
 
@@ -145,7 +146,6 @@ struct SignInView: View {
         return emailPredicate.evaluate(with: email)
     }
 }
-
 // Placeholder Modifier for TextFields
 extension View {
     func placeholder<Content: View>(

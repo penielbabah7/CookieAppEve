@@ -32,7 +32,7 @@ class AuthViewModel: ObservableObject {
 
     private let db = Firestore.firestore()
     private let storage = Storage.storage()
-    private let auth = Auth.auth()
+    let auth = Auth.auth()
     
     var currentUserId: String? {
             return auth.currentUser?.uid
@@ -68,23 +68,23 @@ class AuthViewModel: ObservableObject {
         }
     
     func signIn(email: String, password: String, completion: @escaping (Bool) -> Void) {
-         isLoading = true
-         auth.signIn(withEmail: email, password: password) { [weak self] result, error in
-             DispatchQueue.main.async {
-                 self?.isLoading = false
-                 if let error = error {
-                     self?.errorMessage = "Sign In Failed: \(error.localizedDescription)"
-                     completion(false)
-                 } else if let user = result?.user, user.isEmailVerified {
-                     self?.isSignedIn = true
-                     completion(true)
-                 } else {
-                     self?.errorMessage = "Please verify your email before signing in."
-                     completion(false)
-                 }
-             }
-         }
-     }
+        isLoading = true
+        Auth.auth().signIn(withEmail: email, password: password) { [weak self] result, error in
+            DispatchQueue.main.async {
+                self?.isLoading = false
+                if let error = error {
+                    self?.errorMessage = "Sign In Failed: \(error.localizedDescription)"
+                    completion(false)
+                } else if result?.user != nil {
+                    self?.isSignedIn = true
+                    completion(true)
+                } else {
+                    self?.errorMessage = "Unexpected error occurred. Please try again."
+                    completion(false)
+                }
+            }
+        }
+    }
 
     // MARK: - Sign Up
     func signUp(email: String, password: String, firstName: String, lastName: String, birthdate: Date, address: String, phone: String) {
@@ -295,7 +295,7 @@ class AuthViewModel: ObservableObject {
         userDocRef.getDocument { document, error in
             if let document = document, document.exists, let data = document.data() {
                 DispatchQueue.main.async {
-                    self.userName = "\(data["firstName"] as? String ?? "") \(data["lastName"] as? String ?? "")"
+                    self.userName = data["firstName"] as? String ?? ""
                     self.userEmail = data["email"] as? String ?? ""
                     self.userPhone = data["phone"] as? String ?? ""
                     self.birthdate = (data["birthdate"] as? Timestamp)?.dateValue()
@@ -310,49 +310,10 @@ class AuthViewModel: ObservableObject {
             }
         }
     }
-
-    func sendEmailVerification(email: String, password: String, completion: @escaping (Bool) -> Void) {
-        isLoading = true
-        Auth.auth().createUser(withEmail: email, password: password) { [weak self] result, error in
-            guard let self = self else { return }
-            self.isLoading = false
-
-            if let error = error {
-                DispatchQueue.main.async {
-                    self.errorMessage = "Signup failed: \(error.localizedDescription)"
-                    completion(false)
-                }
-                return
-            }
-
-            if let user = result?.user {
-                user.sendEmailVerification { error in
-                    DispatchQueue.main.async {
-                        if let error = error {
-                            self.errorMessage = "Failed to send verification email: \(error.localizedDescription)"
-                            completion(false)
-                        } else {
-                            self.errorMessage = nil
-                            self.startGracePeriod()
-                            completion(true) // Email verification sent successfully
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private func startGracePeriod() {
-        isGracePeriodActive = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 300) { [weak self] in
-            guard let self = self else { return }
-            if !self.isSignedIn {
-                self.signOut() // Force sign out if not verified within grace period
-            }
-        }
-    }
-
     
+    
+
+
 
     // MARK: - Reset Password
     func resetPassword(email: String, completion: @escaping (Bool, String?) -> Void) {

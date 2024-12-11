@@ -1,12 +1,16 @@
 import SwiftUI
+import FirebaseFirestore
+import FirebaseAuth
 
 struct CartView: View {
     @Binding var cartItems: [String: Int] // A dictionary to track item names and their quantities
     var pricePerCookie: Double = 4.00
 
     @State private var showAlert = false
+    @State private var isOrderPlaced = false
+    @State private var errorMessage: String? = nil
     private let paypalUsername = "DanielBaroi" // Replace with your PayPal.me username
-    private let venmoUsername = "Daniel-Baroi"   // Replace with your Venmo username
+    private let venmoUsername = "Daniel-Baroi" // Replace with your Venmo username
 
     var body: some View {
         NavigationView {
@@ -91,7 +95,7 @@ struct CartView: View {
                                     Text("Total:")
                                         .font(.headline)
                                     Spacer()
-                                    Text("$\(cartItems.values.reduce(0) { $0 + Double($1) } * pricePerCookie, specifier: "%.2f")")
+                                    Text("$\(calculateTotalAmount(), specifier: "%.2f")")
                                         .font(.headline)
                                         .fontWeight(.bold)
                                         .foregroundColor(.green)
@@ -114,7 +118,9 @@ struct CartView: View {
                                 VStack(spacing: 10) {
                                     // Pay with PayPal
                                     Button(action: {
-                                        openPayPalLink()
+                                        placeOrder(paymentMethod: "PayPal") { orderId in
+                                            openPayPalLink(orderId: orderId)
+                                        }
                                     }) {
                                         HStack {
                                             Image(systemName: "dollarsign.circle")
@@ -131,7 +137,9 @@ struct CartView: View {
 
                                     // Pay with Venmo
                                     Button(action: {
-                                        openVenmoLink()
+                                        placeOrder(paymentMethod: "Venmo") { orderId in
+                                            openVenmoLink(orderId: orderId)
+                                        }
                                     }) {
                                         HStack {
                                             Image(systemName: "dollarsign.circle")
@@ -154,33 +162,100 @@ struct CartView: View {
             }
             .navigationBarTitle("Your Cart", displayMode: .inline)
         }
+        .alert(isPresented: $showAlert) {
+            Alert(
+                title: Text(isOrderPlaced ? "Order Placed" : "Error"),
+                message: Text(isOrderPlaced ? "Your order has been placed successfully!" : (errorMessage ?? "An unknown error occurred.")),
+                dismissButton: .default(Text("OK"))
+            )
+        }
     }
 
-    // Helper Functions
-    func openPayPalLink() {
-        let totalAmount = cartItems.values.reduce(0) { $0 + Double($1) } * pricePerCookie
+    // MARK: - Functions
+    private func calculateTotalAmount() -> Double {
+        cartItems.reduce(0) { total, item in
+            total + (Double(item.value) * pricePerCookie)
+        }
+    }
+
+    private func placeOrder(paymentMethod: String, completion: @escaping (String) -> Void) {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            errorMessage = "You must be signed in to place an order."
+            showAlert = true
+            return
+        }
+
+        let totalAmount = calculateTotalAmount()
+        let orderDetails: [String: Any] = [
+            "userId": userId,
+            "items": cartItems,
+            "totalAmount": totalAmount,
+            "paymentMethod": paymentMethod,
+            "paymentStatus": "pending",
+            "timestamp": FieldValue.serverTimestamp()
+        ]
+
+        let db = Firestore.firestore()
+        var newOrderRef: DocumentReference? = nil
+        newOrderRef = db.collection("orders").addDocument(data: orderDetails) { error in
+            if let error = error {
+                errorMessage = "Failed to place order: \(error.localizedDescription)"
+                showAlert = true
+            } else if let orderId = newOrderRef?.documentID {
+                completion(orderId)
+            }
+        }
+    }
+
+    private func openPayPalLink(orderId: String) {
+        let totalAmount = calculateTotalAmount()
         let paypalURL = "https://paypal.me/\(paypalUsername)/\(String(format: "%.2f", totalAmount))"
 
         if let url = URL(string: paypalURL) {
-            UIApplication.shared.open(url)
+            UIApplication.shared.open(url) { success in
+                if success {
+                    confirmPayment(orderId: orderId)
+                }
+            }
         }
     }
 
-    func openVenmoLink() {
-        let totalAmount = cartItems.values.reduce(0) { $0 + Double($1) } * pricePerCookie
+    private func openVenmoLink(orderId: String) {
+        let totalAmount = calculateTotalAmount()
         let description = "Payment for cookies: \(cartItems.keys.joined(separator: ", "))"
-        
-        // Venmo app URL scheme
-        let venmoAppURL = "venmo://paycharge?txn=pay&recipients=\(venmoUsername)&amount=\(String(format: "%.2f", totalAmount))&note=\(description.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
 
-        // Venmo web fallback URL
+        let venmoAppURL = "venmo://paycharge?txn=pay&recipients=\(venmoUsername)&amount=\(String(format: "%.2f", totalAmount))&note=\(description.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
         let venmoWebFallbackURL = "https://venmo.com/u/\(venmoUsername)?txn=pay&amount=\(String(format: "%.2f", totalAmount))&note=\(description.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
 
         if let url = URL(string: venmoAppURL), UIApplication.shared.canOpenURL(url) {
-            UIApplication.shared.open(url)
+            UIApplication.shared.open(url) { success in
+                if success {
+                    confirmPayment(orderId: orderId)
+                }
+            }
         } else if let fallbackURL = URL(string: venmoWebFallbackURL) {
             UIApplication.shared.open(fallbackURL)
         }
+    }
+
+    private func confirmPayment(orderId: String) {
+        let db = Firestore.firestore()
+        db.collection("orders").document(orderId).updateData([
+            "paymentStatus": "confirmed"
+        ]) { error in
+            if let error = error {
+                print("Failed to confirm payment: \(error.localizedDescription)")
+            } else {
+                print("Payment confirmed successfully.")
+                DispatchQueue.main.async {
+                    cartItems.removeAll() // Clear the cart only after payment is confirmed
+                }
+            }
+        }
+    }
+
+    private func notifyOwner(orderDetails: [String: Any]) {
+        print("Notification sent to owner with details: \(orderDetails)")
     }
 }
 

@@ -5,6 +5,7 @@
 //  Created by Daniel Baroi on 10/5/24.
 //
 import SwiftUI
+import FirebaseAuth
 
 struct MoreView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
@@ -111,6 +112,12 @@ struct MoreView: View {
             .padding()
             .background(Color(red: 1.0, green: 1.0, blue: 0.8))
             .ignoresSafeArea()
+        }
+        .onAppear {
+            // Fetch the user's profile when the view appears
+            if let userId = authViewModel.auth.currentUser?.uid {
+                authViewModel.fetchUserProfile(userId: userId)
+            }
         }
     }
 }

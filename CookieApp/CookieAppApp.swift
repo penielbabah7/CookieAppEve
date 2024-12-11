@@ -12,11 +12,12 @@ import UIKit
 import AVFoundation
 
 @main
-struct YourApp: App {
+struct CookieAppApp: App {
     @StateObject private var authViewModel = AuthViewModel()
     @StateObject private var signUpViewModel = SignUpViewModel()
 
     init() {
+        // Configure Firebase
         FirebaseApp.configure()
     }
 
@@ -29,18 +30,22 @@ struct YourApp: App {
             } else if authViewModel.isSignedIn {
                 MenuView()
                     .environmentObject(authViewModel)
+                    .environmentObject(signUpViewModel)
             } else {
                 NavigationView {
                     if signUpViewModel.currentStep > 1 {
+                        // Show Sign-Up Flow if the user is in the middle of sign-up
                         SignUpFlowView()
                             .environmentObject(authViewModel)
                             .environmentObject(signUpViewModel)
                     } else {
+                        // Default to Sign-In View
                         SignInView()
                             .environmentObject(authViewModel)
                             .environmentObject(signUpViewModel)
                     }
                 }
+                .navigationViewStyle(StackNavigationViewStyle()) // Optional: Avoid unwanted side effects on iPad
             }
         }
     }
