@@ -131,41 +131,60 @@ class AuthViewModel: ObservableObject {
     }
     
     // Update Profile Method
-        func updateProfile(name: String?, email: String?, phone: String?, address: String?, completion: @escaping (Bool, String?) -> Void) {
-            guard let userId = Auth.auth().currentUser?.uid else {
-                completion(false, "No user logged in.")
-                return
-            }
+    func updateProfile(
+        name: String?,
+        email: String?,
+        phone: String?,
+        address: [String: String]?, // Address as a dictionary for better structure
+        completion: @escaping (Bool, String?) -> Void
+    ) {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            completion(false, "No user logged in.")
+            return
+        }
 
-            var updatedData: [String: Any] = [:]
+        var updatedData: [String: Any] = [:]
 
-            if let name = name {
-                updatedData["name"] = name
-                self.userName = name
-            }
+        // Update Name
+        if let name = name {
+            updatedData["name"] = name
+            self.userName = name
+        }
 
-            if let email = email {
-                // Attempt to update email in FirebaseAuth
-                Auth.auth().currentUser?.updateEmail(to: email) { error in
-                    if let error = error {
-                        completion(false, "Failed to update email: \(error.localizedDescription)")
-                    } else {
-                        updatedData["email"] = email
-                        self.userEmail = email
+        // Update Phone
+        if let phone = phone {
+            updatedData["phone"] = phone
+            self.userPhone = phone
+        }
+
+        // Update Address
+        if let address = address {
+            updatedData["address"] = address
+            self.address = "\(address["street"] ?? ""), \(address["city"] ?? ""), \(address["state"] ?? "") - \(address["zip"] ?? "")"
+        }
+
+        // Email Update with Firestore Data Sync
+        if let email = email {
+            Auth.auth().currentUser?.updateEmail(to: email) { [weak self] error in
+                guard let self = self else { return }
+                if let error = error {
+                    completion(false, "Failed to update email: \(error.localizedDescription)")
+                } else {
+                    updatedData["email"] = email
+                    self.userEmail = email
+
+                    // Once email is updated, proceed to update Firestore data
+                    self.db.collection("users").document(userId).updateData(updatedData) { error in
+                        if let error = error {
+                            completion(false, "Failed to update profile: \(error.localizedDescription)")
+                        } else {
+                            completion(true, nil)
+                        }
                     }
                 }
             }
-
-            if let phone = phone {
-                updatedData["phone"] = phone
-                self.userPhone = phone
-            }
-
-            if let address = address {
-                updatedData["address"] = address
-                self.address = address
-            }
-
+        } else {
+            // If no email update, update Firestore directly
             db.collection("users").document(userId).updateData(updatedData) { error in
                 if let error = error {
                     completion(false, "Failed to update profile: \(error.localizedDescription)")
@@ -174,7 +193,7 @@ class AuthViewModel: ObservableObject {
                 }
             }
         }
-    
+    }
 
     // Function to sign up a new user
     func createUser(email: String, password: String, completion: @escaping (Bool, String?) -> Void) {

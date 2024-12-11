@@ -6,74 +6,139 @@
 //
 
 import SwiftUI
+import FirebaseAuth
+import FirebaseFirestore
 
 struct RewardsView: View {
-    @State private var purchaseCount: Int = 8
-    private let requiredPurchases = 12
+    @State private var purchaseCount: Int = 0
+    private let requiredPurchases = 6
+    @State private var isLoading = true
+    @State private var errorMessage: String?
 
     var body: some View {
-        ZStack{
+        ZStack {
+            // Background Image
             Image("Toppings Falling") // Replace with your actual image name
-                            .resizable()
-                           // .scale()
-                            .ignoresSafeArea()
-                            .opacity(0.3)
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Header
-                    Text("Rewards")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundColor(.primary)
-                        .padding(.top, 20)
+                .resizable()
+                .ignoresSafeArea()
+                .opacity(0.3)
 
-                    // Progress Section
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Your Progress")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
-
-                        ProgressView(value: Double(purchaseCount), total: Double(requiredPurchases))
-                            .progressViewStyle(LinearProgressViewStyle(tint: Color.blue))
-                            .frame(height: 20)
-                            .background(Color(.systemGray6))
-                            .cornerRadius(10)
-
-                        Text("You have \(purchaseCount) out of \(requiredPurchases) purchases towards a free cookie!")
-                            .font(.subheadline)
-                            .foregroundColor(.primary)
-                    }
+            if isLoading {
+                ProgressView("Loading Rewards...")
                     .padding()
-                    .background(Color(.systemGray6))
-                    .cornerRadius(15)
-                    .shadow(radius: 5)
-                    .padding(.horizontal)
+            } else {
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Header
+                        Text("Rewards")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .foregroundColor(.primary)
+                            .padding(.top, 20)
 
-                    // Rewards List Section
-                    VStack(alignment: .leading, spacing: 20) {
-                        Text("Available Rewards")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
-                            .padding(.leading, 20)
+                        // Progress Section
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Your Progress")
+                                .font(.headline)
+                                .foregroundColor(.secondary)
 
-                        ForEach(rewardsData) { reward in
-                            RewardRow(reward: reward, isUnlocked: reward.isUnlocked(purchaseCount, requiredPurchases))
-                                .padding(.horizontal)
+                            ProgressView(value: Double(purchaseCount), total: Double(requiredPurchases))
+                                .progressViewStyle(LinearProgressViewStyle(tint: Color.blue))
+                                .frame(height: 20)
+                                .background(Color(.systemGray6))
+                                .cornerRadius(10)
+
+                            Text("You have \(purchaseCount) out of \(requiredPurchases) purchases towards a free cookie!")
+                                .font(.subheadline)
+                                .foregroundColor(.primary)
                         }
-                    }
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(15)
+                        .shadow(radius: 5)
+                        .padding(.horizontal)
 
-                    Spacer()
+                        // Rewards List Section
+                        VStack(alignment: .leading, spacing: 20) {
+                            Text("Available Rewards")
+                                .font(.headline)
+                                .foregroundColor(.secondary)
+                                .padding(.leading, 20)
+
+                            ForEach(rewardsData) { reward in
+                                RewardRow(reward: reward, isUnlocked: reward.isUnlocked(purchaseCount, requiredPurchases)) {
+                                    redeemReward(reward: reward)
+                                }
+                                .padding(.horizontal)
+                            }
+                        }
+
+                        Spacer()
+                    }
+                    .background(Color(.systemBackground))
                 }
-                .background(Color(.systemBackground))
             }
         }
-        
+        .onAppear(perform: fetchPurchaseCount)
+        .alert(isPresented: .constant(errorMessage != nil)) {
+            Alert(
+                title: Text("Error"),
+                message: Text(errorMessage ?? "An unknown error occurred."),
+                dismissButton: .default(Text("OK"), action: { errorMessage = nil })
+            )
+        }
+    }
+
+    // MARK: - Fetch Purchase Count
+    private func fetchPurchaseCount() {
+            guard let userId = Auth.auth().currentUser?.uid else {
+                print("No user ID found.")
+                self.isLoading = false
+                return
+            }
+
+            let db = Firestore.firestore()
+            db.collection("users").document(userId).getDocument { snapshot, error in
+                if let error = error {
+                    print("Failed to fetch purchase count: \(error.localizedDescription)")
+                    self.isLoading = false
+                } else if let data = snapshot?.data(), let count = data["purchaseCount"] as? Int {
+                    self.purchaseCount = count
+                    self.isLoading = false
+                } else {
+                    print("No purchase count found for user.")
+                    self.isLoading = false
+                }
+            }
+        }
+
+    // MARK: - Redeem Reward
+    private func redeemReward(reward: Reward) {
+        guard reward.rewardName == "Free Cookie", purchaseCount >= requiredPurchases else { return }
+
+        guard let userId = Auth.auth().currentUser?.uid else {
+            errorMessage = "You must be signed in to redeem rewards."
+            return
+        }
+
+        let db = Firestore.firestore()
+        db.collection("users").document(userId).updateData([
+            "totalCookiesBought": FieldValue.increment(Int64(-requiredPurchases))
+        ]) { error in
+            if let error = error {
+                errorMessage = "Failed to redeem reward: \(error.localizedDescription)"
+            } else {
+                purchaseCount -= requiredPurchases
+                print("Successfully redeemed free cookie reward!")
+            }
+        }
     }
 }
 
 struct RewardRow: View {
     var reward: Reward
     var isUnlocked: Bool
+    var onRedeem: () -> Void
 
     var body: some View {
         HStack(spacing: 15) {
@@ -93,7 +158,9 @@ struct RewardRow: View {
             Spacer()
 
             Button(action: {
-                // Handle redemption action
+                if isUnlocked {
+                    onRedeem()
+                }
             }) {
                 Text(isUnlocked ? "Redeem" : "Locked")
                     .font(.subheadline)
@@ -122,7 +189,9 @@ struct Reward: Identifiable {
 }
 
 let rewardsData = [
-    Reward(rewardName: "Free Cookie", iconName: "gift.fill", description: "Get a free cookie after 12 purchases.", isUnlocked: { $0 >= $1 }),
+    Reward(rewardName: "Free Cookie", iconName: "gift.fill", description: "Get a free cookie after 12 purchases.", isUnlocked: { cookiesBought, required in
+        cookiesBought >= required
+    }),
     Reward(rewardName: "Seasonal Flavor Preview", iconName: "leaf.fill", description: "Try new seasonal flavors before anyone else.", isUnlocked: { _, _ in false }),
     Reward(rewardName: "Birthday Reward", iconName: "birthday.cake.fill", description: "Celebrate with a free birthday treat.", isUnlocked: { _, _ in false }),
     Reward(rewardName: "Cookie of the Month", iconName: "star.fill", description: "Receive the cookie of the month as a reward.", isUnlocked: { _, _ in false }),

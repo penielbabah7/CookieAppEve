@@ -129,7 +129,7 @@ struct ProfileView: View {
                             name: newName.isEmpty ? nil : newName,
                             email: newEmail.isEmpty ? nil : newEmail,
                             phone: newPhone.isEmpty ? nil : newPhone,
-                            address: newAddress.isEmpty ? nil : newAddress
+                            address: newAddress.isEmpty ? nil : ["street": newAddress] // Assuming `newAddress` is the street field
                         ) { success, errorMessage in
                             if success {
                                 // Optionally handle success
@@ -143,10 +143,10 @@ struct ProfileView: View {
                         newName = authViewModel.userName
                         newEmail = authViewModel.userEmail
                         newPhone = authViewModel.userPhone
-                        newAddress = authViewModel.address
-                        isEditing = true
+                        newAddress = authViewModel.address // Assign the address string
                     }
-                }) {
+                })
+               {
                     Text(isEditing ? "Save Changes" : "Edit Profile")
                         .foregroundColor(.white)
                         .padding()
