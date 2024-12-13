@@ -87,7 +87,17 @@ struct OrderHistoryView: View {
             .navigationBarTitle("Order History", displayMode: .inline)
             .onAppear {
                 fetchOrderHistory()
+
+                // Listen for the order history update notification
+                NotificationCenter.default.addObserver(forName: NSNotification.Name("OrderHistoryUpdated"), object: nil, queue: .main) { _ in
+                    fetchOrderHistory()
+                }
             }
+            .onDisappear {
+                // Remove the notification observer to avoid memory leaks
+                NotificationCenter.default.removeObserver(self, name: NSNotification.Name("OrderHistoryUpdated"), object: nil)
+            }
+
         }
     }
 
