@@ -14,6 +14,7 @@ struct MoreView: View {
         ScrollView {
             VStack(spacing: 20) {
                 // User Profile Summary
+                // User Profile Summary Section
                 VStack(spacing: 12) {
                     // Circular avatar with shadow
                     ZStack {
@@ -26,10 +27,24 @@ struct MoreView: View {
                             .frame(width: 100, height: 100)
                             .shadow(color: Color.blue.opacity(0.2), radius: 10, x: 0, y: 5)
                         
-                        Image(systemName: "person.fill")
-                            .resizable()
-                            .frame(width: 60, height: 60)
-                            .foregroundColor(.white)
+                        if let profileImageURL = authViewModel.profilePictureURL,
+                           let url = URL(string: profileImageURL) {
+                            AsyncImage(url: url) { image in
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 80, height: 80)
+                                    .clipShape(Circle())
+                            } placeholder: {
+                                ProgressView()
+                                    .frame(width: 80, height: 80)
+                            }
+                        } else {
+                            Image(systemName: "person.fill")
+                                .resizable()
+                                .frame(width: 80, height: 80)
+                                .foregroundColor(.white)
+                        }
                     }
 
                     // Welcome message and loyalty points
@@ -43,9 +58,9 @@ struct MoreView: View {
                         .foregroundColor(.secondary)
                 }
                 .padding(.top, 40)
+                .padding(.bottom, 20)
 
-
-                // Essential Options Section
+                // Existing VStack for Essential Options
                 VStack(alignment: .leading, spacing: 30) {
                     SectionView(title: "My Account", options: [
                         NavigationOption(title: "Profile Management", iconName: "person.crop.circle", destination: ProfileView()),
@@ -62,6 +77,7 @@ struct MoreView: View {
                         NavigationOption(title: "Loyalty Program", iconName: "star.fill", destination: LoyaltyProgramView())
                     ])
                 }
+
 
                 // Logout Option
                 Button(action: {
