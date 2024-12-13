@@ -1,15 +1,24 @@
 import SwiftUI
 import FirebaseFirestore
 import FirebaseAuth
+import PopupView
+import Foundation
+
+
 
 struct CartView: View {
     @Binding var cartItems: [String: Int] // A dictionary to track item names and their quantities
     var pricePerCookie: Double = 4.00
 
     @State private var showAlert = false
+    @State private var showPaymentConfirmationPopup = false
+    @State private var selectedOrderId: String?
     @State private var isOrderPlaced = false
+    @State private var isLoading = false
+    @State private var paymentWasInitiated = false
     @State private var errorMessage: String? = nil
     @State private var pendingOrderId: String? = nil // Track pending order ID
+    @Environment(\.scenePhase) var scenePhase
 
     private let paypalUsername = "DanielBaroi" // Replace with your PayPal.me username
     private let venmoUsername = "Daniel-Baroi" // Replace with your Venmo username
@@ -162,6 +171,83 @@ struct CartView: View {
                 }
             }
             .navigationBarTitle("Your Cart", displayMode: .inline)
+            .onChange(of: scenePhase) { newPhase in
+                            // Observes when the app becomes active again
+                            if newPhase == .active && paymentWasInitiated {
+                                showPaymentConfirmationPopup = true
+                                paymentWasInitiated = false
+                            }
+                        }
+            .overlay(
+                Group {
+                    if showPaymentConfirmationPopup {
+                        VStack(spacing: 16) {
+                            Text("Have you made the payment?")
+                                .font(.headline)
+
+                            HStack(spacing: 16) {
+                                Button("Yes") {
+                                    guard let orderId = pendingOrderId else { return }
+                                    let db = Firestore.firestore()
+
+                                    // Update the order status to "Confirmed"
+                                    db.collection("orders").document(orderId).updateData([
+                                        "status": "Confirmed"
+                                    ]) { error in
+                                        if let error = error {
+                                            print("Failed to confirm payment: \(error.localizedDescription)")
+                                        } else {
+                                            print("Order status updated to Confirmed!")
+
+                                            // Notify the manager and clear the cart
+                                            db.collection("orders").document(orderId).getDocument { document, error in
+                                                if let error = error {
+                                                    print("Failed to fetch order details: \(error.localizedDescription)")
+                                                } else if let document = document, let orderDetails = document.data() {
+                                                    sendOrderNotification(orderDetails: orderDetails) { success, error in
+                                                        if success {
+                                                            print("Manager successfully notified!")
+                                                        } else {
+                                                            print("Failed to send notification: \(error ?? "Unknown error")")
+                                                        }
+                                                    }
+                                                }
+
+                                                // Clear the cart and refresh order history only after all updates succeed
+                                                DispatchQueue.main.async {
+                                                    cartItems.removeAll()
+                                                }
+
+                                                // Post a notification to refresh the order history
+                                                NotificationCenter.default.post(name: NSNotification.Name("OrderHistoryUpdated"), object: nil)
+                                            }
+                                        }
+                                    }
+                                    showPaymentConfirmationPopup = false
+                                }
+                                .foregroundColor(.green)
+
+                                Button("No") {
+                                    guard let orderId = pendingOrderId else { return }
+                                    notifyManager(orderId: orderId, hasMadePayment: false)
+                                    showPaymentConfirmationPopup = false
+                                }
+                                .foregroundColor(.red)
+                            }
+                            .padding()
+                            .background(Color.white)
+                            .cornerRadius(12)
+                            .shadow(radius: 8)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color.black.opacity(0.5)) // Dimmed background
+                        .ignoresSafeArea()
+                    }
+                }
+            )
+
+
+
         }
         .alert(isPresented: $showAlert) {
             Alert(
@@ -180,74 +266,89 @@ struct CartView: View {
     }
 
     private func placeOrder(paymentMethod: String, completion: @escaping (String) -> Void) {
+        isLoading = true
         guard let userId = Auth.auth().currentUser?.uid else {
             errorMessage = "You must be signed in to place an order."
             showAlert = true
+            isLoading = false
             return
         }
 
-        // Calculate total amount and total cookies in the cart
-        let totalAmount = calculateTotalAmount()
-        let totalCookiesInOrder = cartItems.values.reduce(0, +) // Sum up all cookie quantities in the cart
+        guard !cartItems.isEmpty else {
+            errorMessage = "Your cart is empty."
+            showAlert = true
+            isLoading = false
+            return
+        }
 
-        // Prepare the order details
+        let totalAmount = calculateTotalAmount()
+        let totalCookiesInOrder = cartItems.values.reduce(0, +)
+
         let orderDetails: [String: Any] = [
             "userId": userId,
             "items": cartItems,
             "totalAmount": totalAmount,
             "totalCookiesInOrder": totalCookiesInOrder,
             "paymentMethod": paymentMethod,
-            "paymentStatus": "pending", // Default status as "pending"
+            "paymentStatus": "pending",
             "timestamp": FieldValue.serverTimestamp()
         ]
 
-        // Reference to Firestore database
         let db = Firestore.firestore()
         var newOrderRef: DocumentReference? = nil
 
-        // Add the order to Firestore
         newOrderRef = db.collection("orders").addDocument(data: orderDetails) { error in
+            isLoading = false
             if let error = error {
-                // Handle Firestore error
                 errorMessage = "Failed to place order: \(error.localizedDescription)"
                 showAlert = true
             } else if let orderId = newOrderRef?.documentID {
-                // If the order was successfully created
                 print("Order successfully created with ID: \(orderId)")
 
-                // Update the user's total cookies bought for rewards
-                db.collection("users").document(userId).updateData([
-                    "totalCookiesBought": FieldValue.increment(Int64(totalCookiesInOrder))
-                ]) { error in
-                    if let error = error {
-                        print("Failed to update total cookies bought: \(error.localizedDescription)")
+                // Send email notification
+                EmailManager.shared.sendEmail(
+                    to: "penielbabah7@gmail.com",
+                    subject: "New Order Placed",
+                    body: """
+                    A new order has been placed:
+                    
+                    Items:
+                    \(cartItems.map { "- \($0.key): \($0.value)" }.joined(separator: "\n"))
+                    
+                    Total Amount: $\(String(format: "%.2f", totalAmount))
+                    """
+                )
+                   { success, error in
+                    if success {
+                        print("Email sent successfully!")
                     } else {
-                        print("Successfully updated total cookies bought!")
+                        print("Failed to send email: \(error ?? "Unknown error")")
                     }
                 }
 
-                // Pass the orderId back for payment processing
                 completion(orderId)
             }
         }
     }
 
 
+
     private func openPayPalLink(orderId: String) {
+        paymentWasInitiated = true
         let totalAmount = calculateTotalAmount()
         let paypalURL = "https://paypal.me/\(paypalUsername)/\(String(format: "%.2f", totalAmount))"
-        
+
         if let url = URL(string: paypalURL) {
             UIApplication.shared.open(url) { success in
                 if success {
-                    // Prompt user to confirm payment manually
+                    print("Redirected to PayPal")
                 }
             }
         }
     }
 
-
     private func openVenmoLink(orderId: String) {
+        paymentWasInitiated = true
         let totalAmount = calculateTotalAmount()
         let description = "Payment for cookies: \(cartItems.keys.joined(separator: ", "))"
 
@@ -257,13 +358,7 @@ struct CartView: View {
         if let url = URL(string: venmoAppURL), UIApplication.shared.canOpenURL(url) {
             UIApplication.shared.open(url) { success in
                 if success {
-                    confirmPayment(orderId: orderId) { success, error in
-                        if success {
-                            print("Payment confirmed successfully for order: \(orderId)")
-                        } else {
-                            print("Failed to confirm payment for order: \(orderId). Error: \(error ?? "Unknown error")")
-                        }
-                    }
+                    print("Redirected to Venmo")
                 }
             }
         } else if let fallbackURL = URL(string: venmoWebFallbackURL) {
@@ -345,28 +440,52 @@ struct CartView: View {
             return
         }
 
-        let subject = "Order Confirmation: \(email)"
+        let subject = "Order Confirmation for \(email)"
         let messageBody = """
-        A new order has been confirmed.
-        
+        Thank you for your order!
+
         Order Details:
-        - User Email: \(email)
         - Items: \(items.map { "\($0.key) x \($0.value)" }.joined(separator: ", "))
         - Total Amount: $\(String(format: "%.2f", totalAmount))
 
-        Please process this order at your earliest convenience.
+        Your order is being processed. We'll notify you when it ships.
         """
 
-        // Replace with actual email-sending code (e.g., using an email API)
-        print("Sending email to manager...")
-        print("Subject: \(subject)")
-        print("Body: \(messageBody)")
-
-        // Simulating email sending success
-        DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
-            completion(true, nil)
+        EmailService.shared.sendEmail(to: "penielbabah7@gmail.com", subject: subject, messageBody: messageBody) { success, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(false, error)
+                } else {
+                    completion(success, nil)
+                }
+            }
         }
     }
+
+
+    private func notifyManager(orderId: String, hasMadePayment: Bool) {
+        guard !orderId.isEmpty else {
+            print("Invalid Order ID")
+            return
+        }
+
+        let db = Firestore.firestore()
+        let managerNotification: [String: Any] = [
+            "orderId": orderId,
+            "hasMadePayment": hasMadePayment,
+            "timestamp": FieldValue.serverTimestamp()
+        ]
+
+        db.collection("notifications").addDocument(data: managerNotification) { error in
+            if let error = error {
+                print("Failed to notify manager: \(error.localizedDescription)")
+            } else {
+                print("Manager successfully notified!")
+            }
+        }
+    }
+
+
 
 
 }

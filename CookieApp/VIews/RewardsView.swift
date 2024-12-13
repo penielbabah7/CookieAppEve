@@ -111,6 +111,8 @@ struct RewardsView: View {
                 }
             }
         }
+    
+    
 
     // MARK: - Redeem Reward
     private func redeemReward(reward: Reward) {

@@ -15,6 +15,7 @@
 		B4A553D22CDF07AF00F97081 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = B4A553D12CDF07AF00F97081 /* FirebaseMessaging */; };
 		B4A553D42CDF07AF00F97081 /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = B4A553D32CDF07AF00F97081 /* FirebaseRemoteConfig */; };
 		B4A553D62CDF07AF00F97081 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = B4A553D52CDF07AF00F97081 /* FirebaseStorage */; };
+		B4FB6A7F2D0B537A008BD14F /* PopupView in Frameworks */ = {isa = PBXBuildFile; productRef = B4FB6A7E2D0B537A008BD14F /* PopupView */; };
 		D5F4592A2D0622F300ACF0EB /* EOSC Reel.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D5F459292D0622F300ACF0EB /* EOSC Reel.mp4 */; };
 		D5F4592C2D06389500ACF0EB /* Woman Adding Cookies.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D5F4592B2D06389500ACF0EB /* Woman Adding Cookies.mp4 */; };
 		D5F459302D066A3400ACF0EB /* Woman Breaking Cookie.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D5F4592F2D066A3400ACF0EB /* Woman Breaking Cookie.mp4 */; };
@@ -60,6 +61,7 @@
 				B4A553D22CDF07AF00F97081 /* FirebaseMessaging in Frameworks */,
 				B4A553C82CDF07AF00F97081 /* FirebaseAnalytics in Frameworks */,
 				B4A553CE2CDF07AF00F97081 /* FirebaseFirestore in Frameworks */,
+				B4FB6A7F2D0B537A008BD14F /* PopupView in Frameworks */,
 				B4A553D42CDF07AF00F97081 /* FirebaseRemoteConfig in Frameworks */,
 				B4A553CC2CDF07AF00F97081 /* FirebaseCore in Frameworks */,
 				B4A553D62CDF07AF00F97081 /* FirebaseStorage in Frameworks */,
@@ -120,6 +122,7 @@
 				B4A553D12CDF07AF00F97081 /* FirebaseMessaging */,
 				B4A553D32CDF07AF00F97081 /* FirebaseRemoteConfig */,
 				B4A553D52CDF07AF00F97081 /* FirebaseStorage */,
+				B4FB6A7E2D0B537A008BD14F /* PopupView */,
 			);
 			productName = CookieApp;
 			productReference = D51F9EE82CDE9FF2009DFD35 /* CookieApp.app */;
@@ -151,6 +154,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				B4A553C62CDF07AF00F97081 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				B4FB6A7D2D0B537A008BD14F /* XCRemoteSwiftPackageReference "PopupView" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D51F9EE92CDE9FF2009DFD35 /* Products */;
@@ -401,6 +405,14 @@
 				minimumVersion = 11.4.0;
 			};
 		};
+		B4FB6A7D2D0B537A008BD14F /* XCRemoteSwiftPackageReference "PopupView" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/exyte/PopupView";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.1.4;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -443,6 +455,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B4A553C62CDF07AF00F97081 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseStorage;
+		};
+		B4FB6A7E2D0B537A008BD14F /* PopupView */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B4FB6A7D2D0B537A008BD14F /* XCRemoteSwiftPackageReference "PopupView" */;
+			productName = PopupView;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
