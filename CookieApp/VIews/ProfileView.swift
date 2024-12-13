@@ -1,9 +1,3 @@
-//
-//  ProfileView.swift
-//  CookieApp
-//
-//  Created by Peniel Babah on 11/8/24.
-//
 import SwiftUI
 
 struct ProfileView: View {
@@ -14,23 +8,24 @@ struct ProfileView: View {
     @State private var newPhone = ""
     @State private var newAddress = ""
     @State private var showDeleteAlert = false
+    @State private var showImagePicker = false
+    @State private var selectedImageName: String?
+
+    // Preloaded profile picture options
+    let profileImages = ["Cookie1", "Cookie2", "Cookie3", "Cookie4", "Cookie5", "Cookie6"] // Image names in assets
 
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
                 // Profile Picture Section
                 VStack(spacing: 8) {
-                    if let profileImageURL = authViewModel.profilePictureURL,
-                       let url = URL(string: profileImageURL) {
-                        AsyncImage(url: url) { image in
-                            image
-                                .resizable()
-                                .frame(width: 120, height: 120)
-                                .clipShape(Circle())
-                        } placeholder: {
-                            ProgressView()
-                                .frame(width: 120, height: 120)
-                        }
+                    if let profileImageName = selectedImageName ?? authViewModel.profilePictureURL {
+                        Image(profileImageName)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 120, height: 120)
+                            .clipShape(Circle())
+                            .overlay(Circle().stroke(Color.gray, lineWidth: 1))
                     } else {
                         Image(systemName: "person.crop.circle.fill")
                             .resizable()
@@ -39,12 +34,34 @@ struct ProfileView: View {
                     }
 
                     Button(action: {
-                        // Implement functionality to change profile picture
-                        // You could integrate Firebase Storage for handling image uploads
+                        showImagePicker = true
                     }) {
                         Text("Change Profile Picture")
                             .font(.footnote)
                             .foregroundColor(.blue)
+                    }
+                }
+
+                // Show Image Picker Grid
+                if showImagePicker {
+                    ScrollView {
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 100))], spacing: 10) {
+                            ForEach(profileImages, id: \.self) { imageName in
+                                Button(action: {
+                                    selectedImageName = imageName
+                                    saveSelectedImage(imageName: imageName)
+                                    showImagePicker = false
+                                }) {
+                                    Image(imageName)
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 100, height: 100)
+                                        .clipShape(Circle())
+                                        .overlay(Circle().stroke(Color.gray, lineWidth: 1))
+                                }
+                            }
+                        }
+                        .padding()
                     }
                 }
 
@@ -132,7 +149,6 @@ struct ProfileView: View {
                             address: newAddress.isEmpty ? nil : ["street": newAddress] // Assuming `newAddress` is the street field
                         ) { success, errorMessage in
                             if success {
-                                // Optionally handle success
                                 isEditing = false
                             } else {
                                 authViewModel.errorMessage = errorMessage
@@ -143,10 +159,9 @@ struct ProfileView: View {
                         newName = authViewModel.userName
                         newEmail = authViewModel.userEmail
                         newPhone = authViewModel.userPhone
-                        newAddress = authViewModel.address // Assign the address string
+                        newAddress = authViewModel.address
                     }
-                })
-               {
+                }) {
                     Text(isEditing ? "Save Changes" : "Edit Profile")
                         .foregroundColor(.white)
                         .padding()
@@ -159,5 +174,20 @@ struct ProfileView: View {
         }
         .background(Color(red: 1.0, green: 1.0, blue: 0.8))
         .navigationTitle("Profile Management")
+        .onAppear {
+            loadSelectedImage()
+        }
+    }
+
+    // Save the selected image name
+    private func saveSelectedImage(imageName: String) {
+        UserDefaults.standard.set(imageName, forKey: "selectedProfileImage")
+    }
+
+    // Load the selected image name
+    private func loadSelectedImage() {
+        if let savedImageName = UserDefaults.standard.string(forKey: "selectedProfileImage") {
+            selectedImageName = savedImageName
+        }
     }
 }
