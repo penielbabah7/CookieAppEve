@@ -305,24 +305,50 @@ struct CartView: View {
             } else if let orderId = newOrderRef?.documentID {
                 print("Order successfully created with ID: \(orderId)")
 
-                // Send email notification
-                EmailManager.shared.sendEmail(
-                    to: "penielbabah7@gmail.com",
-                    subject: "New Order Placed",
-                    body: """
-                    A new order has been placed:
-                    
-                    Items:
-                    \(cartItems.map { "- \($0.key): \($0.value)" }.joined(separator: "\n"))
-                    
-                    Total Amount: $\(String(format: "%.2f", totalAmount))
-                    """
-                )
-                   { success, error in
-                    if success {
-                        print("Email sent successfully!")
-                    } else {
-                        print("Failed to send email: \(error ?? "Unknown error")")
+                // Fetch user details from Firestore
+                db.collection("users").document(userId).getDocument { userDoc, error in
+                    if let error = error {
+                        print("Failed to fetch user details: \(error.localizedDescription)")
+                    } else if let userDoc = userDoc, let userData = userDoc.data() {
+                        let userName = "\(userData["firstName"] as? String ?? "Unknown") \(userData["lastName"] as? String ?? "Name")"
+                        let userEmail = userData["email"] as? String ?? "Unknown Email"
+                        let userPhone = userData["phone"] as? String ?? "Unknown Phone"
+                        let street = userData["address"] as? String ?? "Unknown Address"
+                        let city = userData["city"] as? String ?? "Unknown City"
+                        let state = userData["state"] as? String ?? "Unknown State"
+                        let zipCode = userData["zipCode"] as? String ?? "Unknown ZIP"
+                        let totalCookiesBought = userData["totalCookiesBought"] as? Int ?? 0
+
+                        // Send email notification with user details
+                        EmailManager.shared.sendEmail(
+                            to: "penielbabah7@gmail.com",
+                            subject: "New Order Placed",
+                            body: """
+                            A new order has been placed:
+                            
+                            Order Details:
+                            Items:
+                            \(cartItems.map { "- \($0.key): \($0.value)" }.joined(separator: "\n"))
+                            
+                            Total Amount: $\(String(format: "%.2f", totalAmount))
+                            
+                            Customer Details:
+                            Name: \(userName)
+                            Email: \(userEmail)
+                            Phone: \(userPhone)
+                            Address:
+                            \(street)
+                            \(city), \(state) \(zipCode)
+                            
+                            Total Cookies Bought: \(totalCookiesBought)
+                            """
+                        ) { success, error in
+                            if success {
+                                print("Email sent successfully!")
+                            } else {
+                                print("Failed to send email: \(error ?? "Unknown error")")
+                            }
+                        }
                     }
                 }
 
@@ -330,6 +356,9 @@ struct CartView: View {
             }
         }
     }
+
+
+
 
 
 
