@@ -79,7 +79,12 @@ struct RewardsView: View {
                 }
             }
         }
-        .onAppear(perform: fetchPurchaseCount)
+        .onAppear {
+            fetchPurchaseCount()
+            NotificationCenter.default.addObserver(forName: NSNotification.Name("RewardsUpdated"), object: nil, queue: .main) { _ in
+                fetchPurchaseCount()
+            }
+        }
         .alert(isPresented: .constant(errorMessage != nil)) {
             Alert(
                 title: Text("Error"),
@@ -123,18 +128,56 @@ struct RewardsView: View {
             return
         }
 
+        // Select a random "Cookie of the Month"
+        let cookieOptions = ["Chocolate Chip", "Peanut Butter", "Oatmeal Raisin", "Snickerdoodle", "Macadamia Nut"]
+        guard let randomCookie = cookieOptions.randomElement() else {
+            errorMessage = "Failed to select a Cookie of the Month."
+            return
+        }
+
         let db = Firestore.firestore()
-        db.collection("users").document(userId).updateData([
-            "totalCookiesBought": FieldValue.increment(Int64(-requiredPurchases))
-        ]) { error in
+
+        // Create a new order for the free cookie
+        let freeCookieOrder: [String: Any] = [
+            "userId": userId,
+            "items": [randomCookie: 1],
+            "totalAmount": 0.0, // Free cookie
+            "totalCookiesInOrder": 1,
+            "paymentMethod": "Redeemed Reward",
+            "paymentStatus": "confirmed",
+            "timestamp": FieldValue.serverTimestamp()
+        ]
+
+        db.collection("orders").addDocument(data: freeCookieOrder) { error in
             if let error = error {
                 errorMessage = "Failed to redeem reward: \(error.localizedDescription)"
             } else {
-                purchaseCount -= requiredPurchases
-                print("Successfully redeemed free cookie reward!")
+                // Deduct the required purchase count and update the progress
+                db.collection("users").document(userId).updateData([
+                    "purchaseCount": FieldValue.increment(Int64(-requiredPurchases))
+                ]) { error in
+                    if let error = error {
+                        errorMessage = "Failed to update purchase count: \(error.localizedDescription)"
+                    } else {
+                        purchaseCount -= requiredPurchases
+                        print("Successfully redeemed free cookie reward! Cookie: \(randomCookie)")
+
+                        // Notify the user
+                        showAlert(message: "Congratulations! You have redeemed a free cookie. Enjoy your \(randomCookie).")
+                    }
+                }
             }
         }
     }
+
+    // Helper function to show alerts
+    private func showAlert(message: String) {
+        DispatchQueue.main.async {
+            errorMessage = message
+        }
+    }
+
+
 }
 
 struct RewardRow: View {
@@ -191,7 +234,7 @@ struct Reward: Identifiable {
 }
 
 let rewardsData = [
-    Reward(rewardName: "Free Cookie", iconName: "gift.fill", description: "Get a free cookie after 12 purchases.", isUnlocked: { cookiesBought, required in
+    Reward(rewardName: "Free Cookie", iconName: "gift.fill", description: "Get a free cookie after 6 purchases.", isUnlocked: { cookiesBought, required in
         cookiesBought >= required
     }),
     Reward(rewardName: "Seasonal Flavor Preview", iconName: "leaf.fill", description: "Try new seasonal flavors before anyone else.", isUnlocked: { _, _ in false }),

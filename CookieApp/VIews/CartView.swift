@@ -12,6 +12,7 @@ struct CartView: View {
 
     @State private var showAlert = false
     @State private var showPaymentConfirmationPopup = false
+    @State private var showPaymentAlert = false // For showing the confirmation alert
     @State private var selectedOrderId: String?
     @State private var isOrderPlaced = false
     @State private var isLoading = false
@@ -20,6 +21,7 @@ struct CartView: View {
     @State private var pendingOrderId: String? = nil // Track pending order ID
     @Environment(\.scenePhase) var scenePhase
 
+    private let requiredPurchases = 6 // Same value as in RewardsView
     private let paypalUsername = "DanielBaroi" // Replace with your PayPal.me username
     private let venmoUsername = "Daniel-Baroi" // Replace with your Venmo username
 
@@ -184,67 +186,94 @@ struct CartView: View {
                         VStack(spacing: 16) {
                             Text("Have you made the payment?")
                                 .font(.headline)
-
+                            
                             HStack(spacing: 16) {
-                                Button("Yes") {
-                                    guard let orderId = pendingOrderId else { return }
-                                    let db = Firestore.firestore()
+                                
+                                Button(action: {
+                                    showPaymentAlert = true // Trigger the alert
+                                }) {
+                                    Text("Confirm Payment")
+                                        .font(.headline)
+                                        .padding()
+                                        .frame(maxWidth: .infinity)
+                                        .background(Color.blue)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(10)
+                                }
+                                .alert(isPresented: $showPaymentAlert) {
+                                    Alert(
+                                        title: Text("Payment Confirmation"),
+                                        message: Text("Have you made the payment?"),
+                                        primaryButton: .default(Text("Yes"), action: {
+                                            guard let orderId = pendingOrderId else { return }
+                                            let db = Firestore.firestore()
 
-                                    // Update the order status to "Confirmed"
-                                    db.collection("orders").document(orderId).updateData([
-                                        "status": "Confirmed"
-                                    ]) { error in
-                                        if let error = error {
-                                            print("Failed to confirm payment: \(error.localizedDescription)")
-                                        } else {
-                                            print("Order status updated to Confirmed!")
-
-                                            // Notify the manager and clear the cart
-                                            db.collection("orders").document(orderId).getDocument { document, error in
+                                            // Update the order status to "Confirmed"
+                                            db.collection("orders").document(orderId).updateData([
+                                                "status": "Confirmed"
+                                            ]) { error in
                                                 if let error = error {
-                                                    print("Failed to fetch order details: \(error.localizedDescription)")
-                                                } else if let document = document, let orderDetails = document.data() {
-                                                    sendOrderNotification(orderDetails: orderDetails) { success, error in
-                                                        if success {
-                                                            print("Manager successfully notified!")
-                                                        } else {
-                                                            print("Failed to send notification: \(error ?? "Unknown error")")
+                                                    print("Failed to confirm payment: \(error.localizedDescription)")
+                                                } else {
+                                                    print("Order status updated to Confirmed!")
+
+                                                    // Increment the user's purchase count
+                                                    if let userId = Auth.auth().currentUser?.uid {
+                                                        db.collection("users").document(userId).updateData([
+                                                            "purchaseCount": FieldValue.increment(Int64(1))
+                                                        ]) { error in
+                                                            if let error = error {
+                                                                print("Failed to update purchase count: \(error.localizedDescription)")
+                                                            } else {
+                                                                print("Purchase count updated successfully.")
+
+                                                                // Notify RewardsView to refresh
+                                                                NotificationCenter.default.post(name: NSNotification.Name("RewardsUpdated"), object: nil)
+                                                            }
                                                         }
                                                     }
-                                                }
 
-                                                // Clear the cart and refresh order history only after all updates succeed
-                                                DispatchQueue.main.async {
-                                                    cartItems.removeAll()
-                                                }
+                                                    // Notify the manager and clear the cart
+                                                    db.collection("orders").document(orderId).getDocument { document, error in
+                                                        if let error = error {
+                                                            print("Failed to fetch order details: \(error.localizedDescription)")
+                                                        } else if let document = document, let orderDetails = document.data() {
+                                                            sendOrderNotification(orderDetails: orderDetails) { success, error in
+                                                                if success {
+                                                                    print("Manager successfully notified!")
+                                                                } else {
+                                                                    print("Failed to send notification: \(error ?? "Unknown error")")
+                                                                }
+                                                            }
+                                                        }
 
-                                                // Post a notification to refresh the order history
-                                                NotificationCenter.default.post(name: NSNotification.Name("OrderHistoryUpdated"), object: nil)
+                                                        // Clear the cart and refresh order history only after all updates succeed
+                                                        DispatchQueue.main.async {
+                                                            cartItems.removeAll()
+                                                            pendingOrderId = nil // Reset pendingOrderId
+                                                        }
+
+                                                        // Post a notification to refresh the order history
+                                                        NotificationCenter.default.post(name: NSNotification.Name("OrderHistoryUpdated"), object: nil)
+                                                    }
+                                                }
                                             }
-                                        }
-                                    }
-                                    showPaymentConfirmationPopup = false
-                                }
-                                .foregroundColor(.green)
+                                        }),
+                                        secondaryButton: .cancel(Text("No"), action: {
+                                            guard let orderId = pendingOrderId else { return }
+                                            notifyManager(orderId: orderId, hasMadePayment: false)
 
-                                Button("No") {
-                                    guard let orderId = pendingOrderId else { return }
-                                    notifyManager(orderId: orderId, hasMadePayment: false)
-                                    showPaymentConfirmationPopup = false
+                                            // Clear the pending order ID
+                                            pendingOrderId = nil
+                                        })
+                                    )
                                 }
-                                .foregroundColor(.red)
+
                             }
-                            .padding()
-                            .background(Color.white)
-                            .cornerRadius(12)
-                            .shadow(radius: 8)
                         }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color.black.opacity(0.5)) // Dimmed background
-                        .ignoresSafeArea()
                     }
                 }
-            )
+                )
 
 
 
@@ -426,36 +455,54 @@ struct CartView: View {
                 }
                 print("Purchase count updated successfully.")
 
-                // Step 3: Fetch order details and notify the manager
-                db.collection("orders").document(orderId).getDocument { document, error in
+                // Notify RewardsView to refresh
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(name: NSNotification.Name("RewardsUpdated"), object: nil)
+                }
+
+                // Step 3: Fetch user details and send an email
+                db.collection("users").document(userId).getDocument { document, error in
                     if let error = error {
-                        print("Failed to fetch order details: \(error.localizedDescription)")
-                        completion(false, "Failed to fetch order details: \(error.localizedDescription)")
+                        print("Failed to fetch user details: \(error.localizedDescription)")
+                        completion(false, "Failed to fetch user details: \(error.localizedDescription)")
                         return
                     }
 
-                    guard let document = document, document.exists, let orderData = document.data() else {
-                        completion(false, "Order details not found.")
+                    guard let document = document, let userData = document.data() else {
+                        completion(false, "User details not found.")
                         return
                     }
 
-                    // Notify the manager
-                    sendOrderNotification(orderDetails: orderData) { success, notificationError in
-                        if let notificationError = notificationError {
-                            print("Failed to notify manager: \(notificationError)")
+                    // Send an email with updated rewards progress
+                    let userName = "\(userData["firstName"] as? String ?? "Unknown") \(userData["lastName"] as? String ?? "Name")"
+                    let userEmail = userData["email"] as? String ?? "Unknown Email"
+                    let purchaseCount = userData["purchaseCount"] as? Int ?? 0
+
+                    let emailBody = """
+                    Thank you for your order, \(userName)!
+
+                    Your purchase has been confirmed. Here are your updated rewards:
+
+                    Current Purchases: \(purchaseCount)
+                    Purchases Required for Free Cookie: \(requiredPurchases - purchaseCount)
+
+                    We appreciate your loyalty!
+                    """
+
+                    EmailManager.shared.sendEmail(
+                        to: userEmail,
+                        subject: "Purchase Confirmed and Rewards Updated",
+                        body: emailBody
+                    ) { success, error in
+                        if success {
+                            print("Email sent successfully!")
                         } else {
-                            print("Manager notified successfully.")
+                            print("Failed to send email: \(error ?? "Unknown error")")
                         }
-
-                        // Step 4: Clear the cart only after all steps succeed
-                        DispatchQueue.main.async {
-                            cartItems.removeAll()
-                        }
-
-                        // Final completion
-                        completion(true, nil)
                     }
                 }
+
+                completion(true, nil)
             }
         }
     }
